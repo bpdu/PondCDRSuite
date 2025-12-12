@@ -2,25 +2,37 @@ import logging
 import os
 import time
 
+import database
 import utils
-from config import CDR_FOLDER, CHECK_INTERVAL
 
 
 def main() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+    )
+
+    cdr_folder = os.environ.get("CDR_FOLDER", "").strip()
+    if not cdr_folder:
+        raise RuntimeError("CDR_FOLDER is not set")
+
+    check_interval = int(os.environ.get("CHECK_INTERVAL", "3600"))
+
+    database.init_db()
+
     logging.info("Starting CDR notify service")
-    logging.info("Watching folder: %s", CDR_FOLDER)
+    logging.info("Watching folder: %s", cdr_folder)
 
     while True:
         try:
-            files = os.listdir(CDR_FOLDER)
-            logging.info("Files detected: %s", files)
+            files = os.listdir(cdr_folder)
         except Exception:
-            logging.exception("Failed to list directory %s", CDR_FOLDER)
-            time.sleep(CHECK_INTERVAL)
+            logging.exception("Failed to list directory %s", cdr_folder)
+            time.sleep(check_interval)
             continue
 
         for filename in files:
-            full_path = os.path.join(CDR_FOLDER, filename)
+            full_path = os.path.join(cdr_folder, filename)
 
             if not os.path.isfile(full_path):
                 continue
@@ -41,7 +53,7 @@ def main() -> None:
             utils.set_hash(filename, file_hash, utils.FileStatus.SENT)
             logging.info("File processed successfully: %s", filename)
 
-        time.sleep(CHECK_INTERVAL)
+        time.sleep(check_interval)
 
 
 if __name__ == "__main__":

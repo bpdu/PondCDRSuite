@@ -1,8 +1,9 @@
 import logging
+import os
 import sqlite3
 from typing import Optional
 
-DB_NAME = "cdr_files.db"
+DB_NAME = os.environ.get("DB_NAME", "cdr_files.db").strip() or "cdr_files.db"
 
 
 def get_connection() -> sqlite3.Connection:
@@ -77,8 +78,5 @@ def update_status(file_hash: str, status: str) -> bool:
             conn.commit()
             return True
     except Exception:
-        logging.exception(
-            "Failed to update status for hash %s",
-            file_hash,
-        )
+        logging.exception("Failed to update status for hash %s", file_hash)
         return False

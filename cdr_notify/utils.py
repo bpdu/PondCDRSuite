@@ -7,7 +7,6 @@ from email.message import EmailMessage
 from enum import Enum
 
 import database
-from config import SMTP_HOST, SMTP_PORT, EMAIL_FROM, EMAIL_TO_SEND
 
 
 class FileStatus(Enum):
@@ -46,10 +45,25 @@ def update_status(file_hash: str, status: FileStatus) -> bool:
 
 def send_email(filepath: str, filename: str) -> bool:
     try:
+        smtp_host = os.environ.get("SMTP_HOST", "").strip()
+        smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+        smtp_user = os.environ.get("SMTP_USER", "").strip()
+        smtp_password = os.environ.get("SMTP_PASSWORD", "").strip()
+
+        email_from = os.environ.get("EMAIL_FROM", "").strip()
+        email_to = os.environ.get("EMAIL_TO_SEND", "").strip()
+
+        if not smtp_host:
+            raise RuntimeError("SMTP_HOST is not set")
+        if not email_from:
+            raise RuntimeError("EMAIL_FROM is not set")
+        if not email_to:
+            raise RuntimeError("EMAIL_TO_SEND is not set")
+
         msg = EmailMessage()
         msg["Subject"] = f"New CDR file received: {filename}"
-        msg["From"] = EMAIL_FROM
-        msg["To"] = EMAIL_TO_SEND
+        msg["From"] = email_from
+        msg["To"] = email_to
 
         msg.set_content(
             "A new CDR file has been received.\n"
@@ -70,7 +84,13 @@ def send_email(filepath: str, filename: str) -> bool:
                 filename=filename,
             )
 
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.ehlo()
+            if smtp_port == 587:
+                server.starttls()
+                server.ehlo()
+            if smtp_user and smtp_password:
+                server.login(smtp_user, smtp_password)
             server.send_message(msg)
 
         return True
