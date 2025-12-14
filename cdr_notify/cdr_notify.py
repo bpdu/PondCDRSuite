@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 
 import database
@@ -12,30 +11,18 @@ def main() -> int:
         format="%(asctime)s %(levelname)s %(message)s",
     )
 
-    cdr_folder = os.environ.get("CDR_FOLDER", "").strip()
-    if not cdr_folder:
-        logging.error("CDR_FOLDER is not set")
-        return 2
-
     database.init_db()
+
+    try:
+        cdr_folder, items = utils.get_files()
+    except Exception:
+        logging.exception("Failed to get files")
+        return 2
 
     logging.info("Starting CDR notify")
     logging.info("Scanning folder: %s", cdr_folder)
 
-    try:
-        files = os.listdir(cdr_folder)
-    except Exception:
-        logging.exception("Failed to list directory %s", cdr_folder)
-        return 1
-
-    for filename in files:
-        if filename.startswith("."):
-            continue
-
-        full_path = os.path.join(cdr_folder, filename)
-        if not os.path.isfile(full_path):
-            continue
-
+    for filename, full_path in items:
         try:
             file_hash = utils.calculate_hash(full_path)
         except Exception:
