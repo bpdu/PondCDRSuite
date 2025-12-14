@@ -1,6 +1,5 @@
 import hashlib
 import logging
-import mimetypes
 import os
 import smtplib
 from datetime import datetime
@@ -125,16 +124,12 @@ def send_email(filepath: str) -> bool:
         msg["To"] = email_to
         msg.set_content(body)
 
-        mime_type, _ = mimetypes.guess_type(str(file_path))
-        maintype, subtype = (
-            mime_type.split("/", 1) if mime_type else ("application", "octet-stream")
-        )
-
+        # Timlead request: keep attachment logic simple for text files
         with open(file_path, "rb") as f:
             msg.add_attachment(
                 f.read(),
-                maintype=maintype,
-                subtype=subtype,
+                maintype="text",
+                subtype="plain",
                 filename=filename,
             )
 
