@@ -1,26 +1,21 @@
 import logging
 import os
 import smtplib
+from datetime import datetime
 from email.message import EmailMessage
 
 
-CONFIG_PATH = os.path.join(
-    os.path.dirname(__file__),
-    "config",
-    "config.txt",
-)
+BASE_DIR = os.path.dirname(__file__)
 
-RESOURCES_PATH = os.path.join(
-    os.path.dirname(__file__),
-    "resources",
-)
+CONFIG_PATH = os.path.join(BASE_DIR, "config", "config.txt")
+RESOURCES_PATH = os.path.join(BASE_DIR, "resources")
 
 
 def _load_config() -> dict[str, str]:
     config: dict[str, str] = {}
 
     if not os.path.isfile(CONFIG_PATH):
-        raise RuntimeError(f"Config file not found: {CONFIG_PATH}")
+        raise RuntimeError("config/config.txt not found")
 
     with open(CONFIG_PATH) as f:
         for line in f:
@@ -39,7 +34,7 @@ def _load_config() -> dict[str, str]:
 def _load_template(filename: str) -> str:
     path = os.path.join(RESOURCES_PATH, filename)
     if not os.path.isfile(path):
-        raise RuntimeError(f"Template not found: {path}")
+        raise RuntimeError(f"Template not found: {filename}")
 
     with open(path) as f:
         return f.read()
@@ -50,17 +45,18 @@ def send_email(filepath: str) -> bool:
         config = _load_config()
 
         smtp_host = config["SMTP_HOST"]
-        smtp_port = int(config.get("SMTP_PORT", 587))
+        smtp_port = int(config.get("SMTP_PORT", "587"))
         email_from = config["EMAIL_FROM"]
         email_to = config["EMAIL_TO"]
 
         filename = os.path.basename(filepath)
+        changed = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
 
-        subject_template = _load_template("email_subject.txt")
-        body_template = _load_template("email_body.txt")
+        subject_tpl = _load_template("email_subject.txt")
+        body_tpl = _load_template("email_body.txt")
 
-        subject = subject_template.format(filename=filename)
-        body = body_template.format(filename=filename)
+        subject = subject_tpl.format(filename=filename)
+        body = body_tpl.format(filename=filename, changed=changed)
 
         msg = EmailMessage()
         msg["Subject"] = subject
@@ -71,8 +67,8 @@ def send_email(filepath: str) -> bool:
         with open(filepath, "rb") as f:
             msg.add_attachment(
                 f.read(),
-                maintype="text",
-                subtype="plain",
+                maintype="application",
+                subtype="octet-stream",
                 filename=filename,
             )
 
