@@ -1,9 +1,8 @@
 import logging
-import os
 
 import database
-import utils
 import email
+import utils
 
 
 def main() -> None:
@@ -12,9 +11,10 @@ def main() -> None:
         format="%(asctime)s %(levelname)s %(message)s",
     )
 
-    cdr_folder = os.environ.get("CDR_FOLDER", "").strip()
+    config = utils.load_config()
+    cdr_folder = config.get("CDR_FOLDER", "").strip()
     if not cdr_folder:
-        raise RuntimeError("CDR_FOLDER is not set")
+        raise RuntimeError("CDR_FOLDER is not set in config/config.txt")
 
     database.init_db()
 
@@ -33,10 +33,8 @@ def main() -> None:
         if not email.send_email(full_path):
             continue
 
-        filename = os.path.basename(full_path)
-        utils.set_hash(filename, file_hash, utils.FileStatus.SENT)
-
-        logging.info("File processed successfully: %s", filename)
+        utils.set_hash(full_path, file_hash, utils.FileStatus.SENT)
+        logging.info("File processed successfully: %s", utils.get_filename(full_path))
 
 
 if __name__ == "__main__":

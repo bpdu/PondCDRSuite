@@ -9,4 +9,6 @@ Created at: {changed}
 This notification was generated automatically by the Pond cdr_notify service.
 
 Best regards,
+PondCDRSuite Team
+
 
