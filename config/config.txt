@@ -1,0 +1,5 @@
+CDR_FOLDER=/path/to/cdr/folder
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+EMAIL_FROM=noreply@example.com
+EMAIL_TO=support@example.com
