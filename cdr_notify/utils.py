@@ -12,17 +12,31 @@ class FileStatus(Enum):
 
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-_CONFIG_PATH = os.path.join(_BASE_DIR, "config", "config.txt")
+
+_CONFIG_CANDIDATES = [
+    os.path.normpath(os.path.join(_BASE_DIR, "..", "config", "config.txt")),
+    os.path.join(_BASE_DIR, "config", "config.txt"),
+]
+
 _RESOURCES_DIR = os.path.join(_BASE_DIR, "resources")
+_SECRETS_DIR = os.path.join(_BASE_DIR, "secrets")
+_TLGRM_ENV_PATH = os.path.join(_SECRETS_DIR, "tlgrm.env")
+
+
+def _pick_config_path() -> str:
+    for path in _CONFIG_CANDIDATES:
+        if os.path.isfile(path):
+            return path
+    attempted = "\n".join(_CONFIG_CANDIDATES)
+    raise RuntimeError(f"config/config.txt not found. Tried:\n{attempted}")
 
 
 def load_config() -> dict[str, str]:
     config: dict[str, str] = {}
 
-    if not os.path.isfile(_CONFIG_PATH):
-        raise RuntimeError("config/config.txt not found")
+    config_path = _pick_config_path()
 
-    with open(_CONFIG_PATH, "r", encoding="utf-8") as f:
+    with open(config_path, "r", encoding="utf-8") as f:
         for raw_line in f:
             line = raw_line.strip()
             if not line or line.startswith("#") or "=" not in line:
@@ -36,6 +50,22 @@ def load_config() -> dict[str, str]:
                 value = value[1:-1]
 
             config[key] = value
+
+    if os.path.isfile(_TLGRM_ENV_PATH):
+        with open(_TLGRM_ENV_PATH, "r", encoding="utf-8") as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip()
+
+                if len(value) >= 2 and ((value[0] == value[-1] == '"') or (value[0] == value[-1] == "'")):
+                    value = value[1:-1]
+
+                config[key] = value
 
     return config
 
