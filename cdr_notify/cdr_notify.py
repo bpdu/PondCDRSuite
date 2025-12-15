@@ -3,6 +3,7 @@ import os
 
 import database
 import utils
+import email
 
 
 def main() -> None:
@@ -29,7 +30,7 @@ def main() -> None:
         if utils.get_hash(file_hash):
             continue
 
-        if not utils.send_email(full_path):
+        if not email.send_email(full_path):
             continue
 
         filename = os.path.basename(full_path)
