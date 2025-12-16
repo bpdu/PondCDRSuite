@@ -2,7 +2,7 @@ import logging
 
 import database
 import email_sender
-import telegram_notify
+import telegram_sender
 import utils
 
 
@@ -34,7 +34,7 @@ def main() -> None:
         if not email_sender.send_email(full_path):
             continue
 
-        telegram_notify.send_new_file(full_path)
+        telegram_sender.send_message(full_path)
 
         utils.set_hash(full_path, file_hash, utils.FileStatus.SENT)
         logging.info("File processed successfully: %s", utils.get_filename(full_path))
