@@ -59,6 +59,22 @@ def get_filename(full_path: str) -> str:
     return os.path.basename(full_path)
 
 
+def build_notification(full_path: str, changed: str = "") -> dict[str, str]:
+    filename = get_filename(full_path)
+
+    subject = load_template("email_subject.txt").format(filename=filename).strip()
+    body = load_template("email_body.txt").format(
+        filename=filename, changed=changed
+    ).rstrip() + "\n"
+
+    return {
+        "filename": filename,
+        "subject": subject,
+        "body": body,
+        "telegram_text": body,
+    }
+
+
 def get_files(cdr_folder: str) -> list[str]:
     try:
         if not os.path.isdir(cdr_folder):

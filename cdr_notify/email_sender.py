@@ -26,26 +26,20 @@ def send_email(full_path: str) -> bool:
         if not email_to:
             raise RuntimeError("EMAIL_TO is not set in config/config.txt")
 
-        filename = utils.get_filename(full_path)
-
-        subject_tpl = utils.load_template("email_subject.txt")
-        body_tpl = utils.load_template("email_body.txt")
-
-        subject = subject_tpl.format(filename=filename).strip()
-        body = body_tpl.format(filename=filename, changed="").rstrip() + "\n"
+        n = utils.build_notification(full_path)
 
         msg = EmailMessage()
-        msg["Subject"] = subject
+        msg["Subject"] = n["subject"]
         msg["From"] = email_from
         msg["To"] = email_to
-        msg.set_content(body)
+        msg.set_content(n["body"])
 
         with open(full_path, "rb") as f:
             msg.add_attachment(
                 f.read(),
                 maintype="text",
                 subtype="plain",
-                filename=filename,
+                filename=n["filename"],
             )
 
         with smtplib.SMTP(smtp_host, smtp_port) as server:
