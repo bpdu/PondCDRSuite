@@ -13,7 +13,7 @@ class FileStatus(Enum):
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-CONFIG_PATH = os.path.normpath(os.path.join(_BASE_DIR, "..", "config", "config.txt"))
+CONFIG_PATH = os.path.normpath(os.path.join(_BASE_DIR, "config", "config.txt"))
 TELEGRAM_ENV_PATH = os.path.join(_BASE_DIR, "secrets", "telegram.env")
 RESOURCES_DIR = os.path.join(_BASE_DIR, "resources")
 
@@ -76,15 +76,19 @@ def build_notification(full_path: str, changed: str = "") -> dict[str, str]:
 
 
 def get_files(cdr_folder: str) -> list[str]:
+    file_list = []
     try:
         if not os.path.isdir(cdr_folder):
             raise RuntimeError(f"CDR_FOLDER does not exist: {cdr_folder}")
 
-        return [
-            os.path.join(cdr_folder, name)
-            for name in os.listdir(cdr_folder)
-            if os.path.isfile(os.path.join(cdr_folder, name))
-        ]
+        else:
+
+            for name in os.listdir(cdr_folder):
+                if os.path.isfile(os.path.join(cdr_folder, name)):
+                    file_list.append(name)
+        return file_list
+
+
     except Exception:
         logging.exception("Failed to get files from CDR folder: %s", cdr_folder)
         return []

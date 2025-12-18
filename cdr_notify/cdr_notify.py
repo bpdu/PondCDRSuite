@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import database
 import email_sender
@@ -38,7 +39,9 @@ def main() -> None:
 
         utils.set_hash(full_path, file_hash, utils.FileStatus.SENT)
         logging.info("File processed successfully: %s", utils.get_filename(full_path))
+        sys.exit()
 
+    logging.info("No new CDR files found")
 
 if __name__ == "__main__":
     main()
