@@ -1,4 +1,5 @@
 import logging
+
 import requests
 
 import utils
@@ -16,13 +17,10 @@ def send_message(full_path: str) -> bool:
         if not chat_id:
             raise RuntimeError("TELEGRAM_CHAT_ID is not set in secrets/telegram.env")
 
-        filename = utils.get_filename(full_path)
-        text = f"New CDR file arrived: {filename}"
-
         url = f"https://api.telegram.org/bot{token}/sendMessage"
         payload = {
             "chat_id": chat_id,
-            "text": text,
+            "text": utils.build_notification(full_path)["telegram_text"],
         }
 
         r = requests.post(url, json=payload, timeout=10)

@@ -1,4 +1,4 @@
-CDR_FOLDER=/path/to/cdr/folder
+CDR_FOLDER=/tmp/cdr_test
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
 EMAIL_FROM=noreply@example.com
