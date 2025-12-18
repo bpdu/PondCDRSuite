@@ -32,16 +32,21 @@ def main() -> None:
         if utils.get_hash(file_hash):
             continue
 
-        if not email_sender.send_email(full_path):
-            continue
+        tg_ok = telegram_sender.send_message(full_path)
+        email_ok = email_sender.send_email(full_path)
 
-        telegram_sender.send_message(full_path)
-
-        utils.set_hash(full_path, file_hash, utils.FileStatus.SENT)
-        logging.info("File processed successfully: %s", utils.get_filename(full_path))
-        sys.exit()
+        if email_ok or tg_ok:
+            utils.set_hash(full_path, file_hash, utils.FileStatus.SENT)
+            logging.info(
+                "File processed successfully: %s (email=%s telegram=%s)",
+                utils.get_filename(full_path),
+                email_ok,
+                tg_ok,
+            )
+            sys.exit()
 
     logging.info("No new CDR files found")
+
 
 if __name__ == "__main__":
     main()
