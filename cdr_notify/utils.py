@@ -84,7 +84,7 @@ def get_files(cdr_folder: str) -> list[str]:
         else:
             for name in os.listdir(cdr_folder):
                 full_path = os.path.join(cdr_folder, name)
-                if os.path.isfile(full_path)):
+                if os.path.isfile(full_path):
                     file_list.append(full_path)
             return file_list
 
