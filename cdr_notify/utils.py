@@ -2,7 +2,7 @@ import hashlib
 import logging
 import os
 from enum import Enum
-
+import datetime
 import database
 
 
@@ -63,9 +63,7 @@ def build_notification(full_path: str, changed: str = "") -> dict[str, str]:
 
     if not changed:
         try:
-            changed = datetime.fromtimestamp(os.path.getmtime(full_path)).strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
+            changed = datetime.datetime.fromtimestamp(os.path.getmtime(full_path)).strftime("%Y-%m-%d %H:%M:%S")
         except Exception:
             logging.exception("Failed to get mtime for %s", full_path)
             changed = ""
@@ -105,7 +103,7 @@ def get_files(cdr_folder: str) -> list[str]:
 def calculate_hash(filepath: str) -> str | None:
     try:
         with open(filepath, "rb") as f:
-            return hashlib.sha256(f.read()).hexdigest()
+            return hashlib.sha256(filepath+f.read()).hexdigest()
     except Exception:
         logging.exception("Failed to calculate hash for %s", filepath)
         return None
