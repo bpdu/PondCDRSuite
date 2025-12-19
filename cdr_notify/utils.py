@@ -103,6 +103,7 @@ def get_files(cdr_folder: str) -> list[str]:
             if os.path.isfile(full_path):
                 file_list.append(full_path)
 
+        file_list.sort()
         return file_list
     except Exception:
         logging.exception("Failed to get files from CDR folder: %s", cdr_folder)
@@ -147,3 +148,12 @@ def update_file_status(full_path: str, status: FileStatus, last_error: str = "")
     except Exception:
         logging.exception("Database update error for %s", full_path)
         return False
+
+
+def safe_error(exc: Exception) -> str:
+    msg = str(exc).strip()
+    if not msg:
+        msg = exc.__class__.__name__
+    if len(msg) > 500:
+        msg = msg[:500]
+    return msg

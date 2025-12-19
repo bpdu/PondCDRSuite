@@ -1,4 +1,5 @@
 import logging
+import os
 
 import database
 import email_sender
@@ -6,13 +7,8 @@ import telegram_sender
 import utils
 
 
-def _safe_error(exc: Exception) -> str:
-    msg = str(exc).strip()
-    if not msg:
-        msg = exc.__class__.__name__
-    if len(msg) > 500:
-        msg = msg[:500]
-    return msg
+def _is_true(value: str) -> bool:
+    return value.strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
 def main() -> None:
@@ -23,24 +19,22 @@ def main() -> None:
 
     config = utils.load_config()
 
-    # TEMP: local test override
-    cdr_folder = "/Users/tolibzhonkhalikov/CDR_Files"
+    cdr_folder = config.get("CDR_FOLDER", "").strip()
+    if not cdr_folder:
+        raise RuntimeError("CDR_FOLDER is not set in config/config.txt")
 
-    # production way (keep commented for now)
-    # cdr_folder = config.get("CDR_FOLDER", "").strip()
-    # if not cdr_folder:
-    #     raise RuntimeError("CDR_FOLDER is not set in config/config.txt")
+    db_name = config.get("DB_NAME", "").strip()
+    if db_name:
+        os.environ["DB_NAME"] = db_name
 
     database.init_db()
-
     logging.info("Starting CDR notify service")
 
     files = utils.get_files(cdr_folder)
-
     found_new_files = False
 
-    email_enabled = config.get("EMAIL_SEND", "").strip() == "True"
-    telegram_enabled = config.get("TELEGRAM_SEND", "").strip() == "True"
+    email_enabled = _is_true(config.get("EMAIL_SEND", ""))
+    telegram_enabled = _is_true(config.get("TELEGRAM_SEND", ""))
 
     for full_path in files:
         if utils.is_known_file(full_path):
@@ -65,7 +59,7 @@ def main() -> None:
                 if not telegram_send_status:
                     errors.append("Telegram send returned False")
             except Exception as e:
-                errors.append(f"Telegram error: {_safe_error(e)}")
+                errors.append(f"Telegram error: {utils.safe_error(e)}")
 
         if email_enabled:
             try:
@@ -73,7 +67,7 @@ def main() -> None:
                 if not email_send_status:
                     errors.append("Email send returned False")
             except Exception as e:
-                errors.append(f"Email error: {_safe_error(e)}")
+                errors.append(f"Email error: {utils.safe_error(e)}")
 
         if email_send_status or telegram_send_status:
             utils.update_file_status(full_path, utils.FileStatus.SENT, "")

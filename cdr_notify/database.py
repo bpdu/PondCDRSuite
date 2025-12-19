@@ -29,6 +29,7 @@ def init_db() -> None:
             )
             conn.commit()
 
+            # Backward-compatible migration for older DBs
             try:
                 cur.execute("ALTER TABLE cdr_files ADD COLUMN last_error TEXT;")
                 conn.commit()
