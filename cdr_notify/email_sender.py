@@ -1,3 +1,4 @@
+
 import logging
 import smtplib
 from email.message import EmailMessage
@@ -8,6 +9,9 @@ import utils
 def send_email(full_path: str) -> bool:
     try:
         config = utils.load_config()
+
+        if not utils.is_enabled(config.get("EMAIL_SEND", "")):
+            return True
 
         smtp_host = config.get("SMTP_HOST", "").strip()
         smtp_port_str = config.get("SMTP_PORT", "587").strip() or "587"
@@ -20,11 +24,11 @@ def send_email(full_path: str) -> bool:
         smtp_password = config.get("SMTP_PASSWORD", "").strip()
 
         if not smtp_host:
-            raise RuntimeError("SMTP_HOST is not set in config/config.txt")
+            raise RuntimeError(f"SMTP_HOST is not set in {utils.CONFIG_PATH}")
         if not email_from:
-            raise RuntimeError("EMAIL_FROM is not set in config/config.txt")
+            raise RuntimeError(f"EMAIL_FROM is not set in {utils.CONFIG_PATH}")
         if not email_to:
-            raise RuntimeError("EMAIL_TO is not set in config/config.txt")
+            raise RuntimeError(f"EMAIL_TO is not set in {utils.CONFIG_PATH}")
 
         n = utils.build_notification(full_path)
 

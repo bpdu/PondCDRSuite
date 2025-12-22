@@ -1,13 +1,15 @@
+# utils.py
+
+import datetime
 import hashlib
 import logging
 import os
 from enum import Enum
-import datetime
+
 import database
 
 
 class FileStatus(Enum):
-    ARRIVED = "ARRIVED"
     SENT = "SENT"
 
 
@@ -18,11 +20,15 @@ TELEGRAM_ENV_PATH = os.path.join(_BASE_DIR, "secrets", "telegram.env")
 RESOURCES_DIR = os.path.join(_BASE_DIR, "resources")
 
 
+def is_enabled(value: str) -> bool:
+    return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
 def load_config() -> dict[str, str]:
     config: dict[str, str] = {}
 
     if not os.path.isfile(CONFIG_PATH):
-        raise RuntimeError("config/config.txt not found")
+        raise RuntimeError(f"Config file not found: {CONFIG_PATH}")
 
     _load_env_file(CONFIG_PATH, config)
 
@@ -40,10 +46,7 @@ def _load_env_file(path: str, config: dict[str, str]) -> None:
                 continue
 
             key, value = line.split("=", 1)
-            key = key.strip()
-            value = value.strip().strip("\"'")
-
-            config[key] = value
+            config[key.strip()] = value.strip().strip("\"'")
 
 
 def load_template(filename: str) -> str:
@@ -58,20 +61,18 @@ def load_template(filename: str) -> str:
 def get_filename(full_path: str) -> str:
     return os.path.basename(full_path)
 
-def build_notification(full_path: str, changed: str = "") -> dict[str, str]:
+
+def build_notification(full_path: str) -> dict[str, str]:
     filename = get_filename(full_path)
 
-    if not changed:
-        try:
-            changed = datetime.datetime.fromtimestamp(os.path.getmtime(full_path)).strftime("%Y-%m-%d %H:%M:%S")
-        except Exception:
-            logging.exception("Failed to get mtime for %s", full_path)
-            changed = ""
+    changed = ""
+    try:
+        changed = datetime.datetime.fromtimestamp(os.path.getmtime(full_path)).strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        logging.exception("Failed to get mtime for %s", full_path)
 
     subject = load_template("email_subject.txt").format(filename=filename).strip()
-    body = load_template("email_body.txt").format(
-        filename=filename, changed=changed
-    ).rstrip() + "\n"
+    body = load_template("email_body.txt").format(filename=filename, changed=changed).rstrip() + "\n"
 
     return {
         "filename": filename,
@@ -82,45 +83,50 @@ def build_notification(full_path: str, changed: str = "") -> dict[str, str]:
 
 
 def get_files(cdr_folder: str) -> list[str]:
-    file_list = []
     try:
         if not os.path.isdir(cdr_folder):
             raise RuntimeError(f"CDR_FOLDER does not exist: {cdr_folder}")
 
-        else:
-            for name in os.listdir(cdr_folder):
-                full_path = os.path.join(cdr_folder, name)
-                if os.path.isfile(full_path):
-                    file_list.append(full_path)
-            return file_list
+        files: list[str] = []
+        for name in os.listdir(cdr_folder):
+            if name.startswith("."):
+                continue
 
+            full_path = os.path.join(cdr_folder, name)
+            if os.path.isfile(full_path):
+                files.append(full_path)
+
+        files.sort()
+        return files
 
     except Exception:
-        logging.exception("Failed to get files from CDR folder: %s", cdr_folder)
+        logging.exception("Failed to list files in %s", cdr_folder)
         return []
 
 
 def calculate_hash(filepath: str) -> str | None:
     try:
         with open(filepath, "rb") as f:
-            return hashlib.sha256(filepath+f.read()).hexdigest()
+            content = f.read()
+        return hashlib.sha256(filepath.encode("utf-8") + content).hexdigest()
     except Exception:
         logging.exception("Failed to calculate hash for %s", filepath)
         return None
 
 
-def get_hash(file_hash: str) -> bool:
+def is_known_file(full_path: str) -> bool:
+    filename = get_filename(full_path)
     try:
-        return database.get_file_by_hash(file_hash) is not None
+        return database.get_file_by_filename(filename) is not None
     except Exception:
-        logging.exception("Database read error for hash %s", file_hash)
+        logging.exception("Database read error for filename %s", filename)
         return False
 
 
-def set_hash(full_path: str, file_hash: str, status: FileStatus) -> bool:
+def insert_file_record(full_path: str, file_hash: str, status: FileStatus) -> bool:
     filename = get_filename(full_path)
     try:
         return database.insert_file(filename, file_hash, status.value)
     except Exception:
-        logging.exception("Database insert error for %s (%s)", filename, file_hash)
+        logging.exception("Database insert error for %s", filename)
         return False

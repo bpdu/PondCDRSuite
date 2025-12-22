@@ -1,4 +1,9 @@
-CDR_FOLDER=/tmp/cdr_test
+CDR_FOLDER=/path/to/cdr_folder
+DB_NAME=/path/to/cdr_files.db
+
+TELEGRAM_SEND=True
+EMAIL_SEND=False
+
 
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
@@ -6,5 +11,4 @@ SMTP_PORT=587
 EMAIL_FROM=noreply@example.com
 EMAIL_TO=support@example.com
 
-EMAIL_SEND=True
-TELEGRAM_SEND=True
+
