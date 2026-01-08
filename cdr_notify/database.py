@@ -4,7 +4,7 @@ import os
 import sqlite3
 from typing import Optional
 
-DB_NAME = os.environ.get("DB_NAME", "cdr_files.db").strip() or "cdr_files.db"
+DB_NAME = os.environ.get("DB_NAME", "db.sqlite3").strip() or "db.sqlite3"
 
 
 def get_connection() -> sqlite3.Connection:
