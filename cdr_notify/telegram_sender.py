@@ -1,66 +1,49 @@
 
 import logging
-from typing import Dict
 
 import requests
 
 import utils
-from utils import NotificationError, ConfigError
+from utils import NotificationError
 
 
-class TelegramSender:
-    """Handles Telegram notifications via Bot API"""
+@utils.retry(max_attempts=3)
+def send_telegram(file_path: str, config: dict[str, str]) -> bool:
+    """
+    Send Telegram notification for a file.
 
-    def __init__(self, config: Dict[str, str]):
-        self.config = config
-        self.enabled = config.get("TELEGRAM_SEND", "").strip().lower() == "true"
+    Args:
+        file_path: Full path to the CDR file
+        config: Configuration dictionary
 
-        if self.enabled:
-            self._validate_config()
+    Returns:
+        True if message sent or Telegram disabled
 
-    def _validate_config(self) -> None:
-        """Validate required Telegram configuration"""
-        required = {
-            "TELEGRAM_BOT_TOKEN": self.config.get("TELEGRAM_BOT_TOKEN", "").strip(),
-            "TELEGRAM_CHAT_ID": self.config.get("TELEGRAM_CHAT_ID", "").strip(),
+    Raises:
+        NotificationError: If Telegram sending fails
+    """
+    enabled = config.get("TELEGRAM_SEND", "").strip().lower() == "true"
+    if not enabled:
+        logging.debug("Telegram sending disabled, skipping")
+        return True
+
+    try:
+        token = config["TELEGRAM_BOT_TOKEN"].strip()
+        chat_id = config["TELEGRAM_CHAT_ID"].strip()
+
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        payload = {
+            "chat_id": chat_id,
+            "text": utils.build_notification(file_path)["telegram_text"],
         }
 
-        missing = [key for key, val in required.items() if not val]
-        if missing:
-            raise ConfigError(f"Missing required Telegram config: {', '.join(missing)}")
+        r = requests.post(url, json=payload, timeout=10)
+        r.raise_for_status()
 
-    @utils.retry(max_attempts=3)
-    def send(self, full_path: str) -> bool:
-        """
-        Send Telegram notification for a file.
+        logging.info(f"Telegram message sent for {utils.get_filename(file_path)}")
+        return True
 
-        Returns:
-            True if message sent or Telegram disabled
-
-        Raises:
-            NotificationError: If Telegram sending fails
-        """
-        if not self.enabled:
-            logging.debug("Telegram sending disabled, skipping")
-            return True
-
-        try:
-            token = self.config["TELEGRAM_BOT_TOKEN"].strip()
-            chat_id = self.config["TELEGRAM_CHAT_ID"].strip()
-
-            url = f"https://api.telegram.org/bot{token}/sendMessage"
-            payload = {
-                "chat_id": chat_id,
-                "text": utils.build_notification(full_path)["telegram_text"],
-            }
-
-            r = requests.post(url, json=payload, timeout=10)
-            r.raise_for_status()
-
-            logging.info(f"Telegram message sent for {utils.get_filename(full_path)}")
-            return True
-
-        except requests.RequestException as e:
-            raise NotificationError(f"Telegram sending failed: {e}")
-        except Exception as e:
-            raise NotificationError(f"Unexpected error sending Telegram: {e}")
+    except requests.RequestException as e:
+        raise NotificationError(f"Telegram sending failed: {e}")
+    except Exception as e:
+        raise NotificationError(f"Unexpected error sending Telegram: {e}")

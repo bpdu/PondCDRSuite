@@ -10,8 +10,8 @@ from functools import wraps
 from typing import Callable, TypeVar, Tuple
 
 import database
-from email_sender import EmailSender
-from telegram_sender import TelegramSender
+from email_sender import send_email
+from telegram_sender import send_telegram
 
 
 # Custom Exceptions
@@ -320,20 +320,16 @@ def send_notifications(file_path: str, config: dict[str, str]) -> Tuple[bool, bo
     telegram_sent = False
     errors = []
 
-    # Initialize senders
-    email_sender = EmailSender(config)
-    telegram_sender = TelegramSender(config)
-
     # Try email
     try:
-        email_sent = email_sender.send(file_path)
+        email_sent = send_email(file_path, config)
     except NotificationError as e:
         errors.append(f"Email: {e}")
         logging.error(f"Email notification failed for {get_filename(file_path)}: {e}")
 
     # Try Telegram
     try:
-        telegram_sent = telegram_sender.send(file_path)
+        telegram_sent = send_telegram(file_path, config)
     except NotificationError as e:
         errors.append(f"Telegram: {e}")
         logging.error(f"Telegram notification failed for {get_filename(file_path)}: {e}")
