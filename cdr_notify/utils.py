@@ -320,19 +320,25 @@ def send_notifications(file_path: str, config: dict[str, str]) -> Tuple[bool, bo
     telegram_sent = False
     errors = []
 
-    # Try email
-    try:
-        email_sent = send_email(file_path, config)
-    except NotificationError as e:
-        errors.append(f"Email: {e}")
-        logging.error(f"Email notification failed for {get_filename(file_path)}: {e}")
+    # Try email if enabled
+    if config.get("EMAIL_SEND", "").strip().lower() == "true":
+        try:
+            email_sent = send_email(file_path, config)
+        except NotificationError as e:
+            errors.append(f"Email: {e}")
+            logging.error(f"Email notification failed for {get_filename(file_path)}: {e}")
+    else:
+        email_sent = True  # Consider disabled as success
 
-    # Try Telegram
-    try:
-        telegram_sent = send_telegram(file_path, config)
-    except NotificationError as e:
-        errors.append(f"Telegram: {e}")
-        logging.error(f"Telegram notification failed for {get_filename(file_path)}: {e}")
+    # Try Telegram if enabled
+    if config.get("TELEGRAM_SEND", "").strip().lower() == "true":
+        try:
+            telegram_sent = send_telegram(file_path, config)
+        except NotificationError as e:
+            errors.append(f"Telegram: {e}")
+            logging.error(f"Telegram notification failed for {get_filename(file_path)}: {e}")
+    else:
+        telegram_sent = True  # Consider disabled as success
 
     return email_sent, telegram_sent, errors
 

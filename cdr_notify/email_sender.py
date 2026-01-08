@@ -17,16 +17,11 @@ def send_email(file_path: str, config: dict[str, str]) -> bool:
         config: Configuration dictionary
 
     Returns:
-        True if email sent or email disabled
+        True if email sent successfully
 
     Raises:
         NotificationError: If email sending fails
     """
-    enabled = config.get("EMAIL_SEND", "").strip().lower() == "true"
-    if not enabled:
-        logging.debug("Email sending disabled, skipping")
-        return True
-
     try:
         smtp_host = config["SMTP_HOST"].strip()
         smtp_port = int(config.get("SMTP_PORT", "587").strip() or "587")

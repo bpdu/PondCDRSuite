@@ -17,16 +17,11 @@ def send_telegram(file_path: str, config: dict[str, str]) -> bool:
         config: Configuration dictionary
 
     Returns:
-        True if message sent or Telegram disabled
+        True if message sent successfully
 
     Raises:
         NotificationError: If Telegram sending fails
     """
-    enabled = config.get("TELEGRAM_SEND", "").strip().lower() == "true"
-    if not enabled:
-        logging.debug("Telegram sending disabled, skipping")
-        return True
-
     try:
         token = config["TELEGRAM_BOT_TOKEN"].strip()
         chat_id = config["TELEGRAM_CHAT_ID"].strip()
