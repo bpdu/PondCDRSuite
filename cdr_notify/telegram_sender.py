@@ -38,7 +38,5 @@ def send_telegram(file_path: str, config: dict[str, str]) -> bool:
         logging.info(f"Telegram message sent for {utils.get_filename(file_path)}")
         return True
 
-    except requests.RequestException as e:
-        raise NotificationError(f"Telegram sending failed: {e}")
     except Exception as e:
-        raise NotificationError(f"Unexpected error sending Telegram: {e}")
+        raise NotificationError(f"Telegram sending failed: {e}")

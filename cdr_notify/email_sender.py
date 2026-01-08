@@ -58,7 +58,5 @@ def send_email(file_path: str, config: dict[str, str]) -> bool:
         logging.info(f"Email sent successfully for {n['filename']}")
         return True
 
-    except (smtplib.SMTPException, OSError, IOError) as e:
-        raise NotificationError(f"Email sending failed: {e}")
     except Exception as e:
-        raise NotificationError(f"Unexpected error sending email: {e}")
+        raise NotificationError(f"Email sending failed: {e}")
