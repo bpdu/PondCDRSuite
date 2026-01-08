@@ -20,8 +20,8 @@ def init_db() -> None:
                 """
                 CREATE TABLE IF NOT EXISTS cdr_files (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    filename TEXT UNIQUE NOT NULL,
-                    file_hash TEXT NOT NULL,
+                    filename TEXT NOT NULL,
+                    file_hash TEXT UNIQUE NOT NULL,
                     status TEXT NOT NULL,
                     email_sent BOOLEAN DEFAULT 0,
                     telegram_sent BOOLEAN DEFAULT 0,
@@ -37,14 +37,24 @@ def init_db() -> None:
         raise
 
 
-def get_file_by_filename(filename: str) -> Optional[tuple]:
+def get_file_by_hash(file_hash: str) -> Optional[tuple]:
+    """
+    Get file record by hash (filename + content).
+
+    Args:
+        file_hash: SHA256 hash of filename + content
+
+    Returns:
+        Tuple of (id, filename, file_hash, status, email_sent, telegram_sent, changed)
+        or None if not found
+    """
     try:
         with get_connection() as conn:
             cur = conn.cursor()
-            cur.execute("SELECT * FROM cdr_files WHERE filename = ?", (filename,))
+            cur.execute("SELECT * FROM cdr_files WHERE file_hash = ?", (file_hash,))
             return cur.fetchone()
     except Exception:
-        logging.exception("Database read error for filename %s", filename)
+        logging.exception("Database read error for hash %s", file_hash)
         return None
 
 
@@ -56,26 +66,27 @@ def insert_file(
     telegram_sent: bool
 ) -> bool:
     """
-    Insert file record with notification status.
+    Insert or replace file record with notification status.
+    Uses file_hash as unique key - will update if same hash exists.
 
     Args:
         filename: Name of the CDR file
-        file_hash: SHA256 hash of the file
+        file_hash: SHA256 hash of filename + content (unique key)
         status: Overall status (SENT/PARTIAL/FAILED)
         email_sent: Whether email notification was sent
         telegram_sent: Whether telegram notification was sent
 
     Returns:
-        True if insert was successful
+        True if insert/update was successful
 
     Raises:
-        sqlite3.Error: If database insert fails
+        sqlite3.Error: If database operation fails
     """
     try:
         with get_connection() as conn:
             cur = conn.cursor()
             cur.execute(
-                """INSERT INTO cdr_files
+                """INSERT OR REPLACE INTO cdr_files
                    (filename, file_hash, status, email_sent, telegram_sent)
                    VALUES (?, ?, ?, ?, ?)""",
                 (filename, file_hash, status, email_sent, telegram_sent)

@@ -170,21 +170,33 @@ def get_files(cdr_folder: str) -> list[str]:
 
 
 def calculate_hash(filepath: str) -> str | None:
+    """
+    Calculate SHA256 hash from filename + file content.
+    This ensures same filename with different content = different hash.
+    """
     try:
+        filename = get_filename(filepath)
         with open(filepath, "rb") as f:
             content = f.read()
-        return hashlib.sha256(filepath.encode("utf-8") + content).hexdigest()
+        return hashlib.sha256(filename.encode("utf-8") + content).hexdigest()
     except Exception:
         logging.exception("Failed to calculate hash for %s", filepath)
         return None
 
 
 def is_known_file(full_path: str) -> bool:
-    filename = get_filename(full_path)
+    """
+    Check if file (by hash) has been processed before.
+    Uses hash = filename + content for lookup.
+    """
+    file_hash = calculate_hash(full_path)
+    if not file_hash:
+        return False
+
     try:
-        return database.get_file_by_filename(filename) is not None
+        return database.get_file_by_hash(file_hash) is not None
     except Exception:
-        logging.exception("Database read error for filename %s", filename)
+        logging.exception("Database read error for file %s", get_filename(full_path))
         return False
 
 
