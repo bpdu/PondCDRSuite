@@ -193,12 +193,10 @@ def insert_file_record(
     file_hash: str,
     status: FileStatus,
     email_sent: bool,
-    telegram_sent: bool,
-    error_message: str | None = None,
-    retry_count: int = 0
+    telegram_sent: bool
 ) -> bool:
     """
-    Insert file record with detailed status.
+    Insert file record with notification status.
 
     Args:
         full_path: Full path to file
@@ -206,8 +204,6 @@ def insert_file_record(
         status: Overall processing status (SENT/PARTIAL_SUCCESS/FAILED)
         email_sent: Whether email was sent successfully
         telegram_sent: Whether telegram was sent successfully
-        error_message: Optional error details
-        retry_count: Number of retry attempts made
 
     Returns:
         True if insert was successful, False otherwise
@@ -219,9 +215,7 @@ def insert_file_record(
             file_hash=file_hash,
             status=status.value,
             email_sent=email_sent,
-            telegram_sent=telegram_sent,
-            error_message=error_message,
-            retry_count=retry_count
+            telegram_sent=telegram_sent
         )
     except Exception as e:
         logging.exception("Database insert error for %s", filename)
@@ -365,9 +359,6 @@ def process_file(file_path: str, config: dict[str, str]) -> None:
     else:
         status = FileStatus.FAILED
 
-    # Get error message
-    error_message = "; ".join(errors) if errors else None
-
     # CRITICAL: Always save to database, regardless of notification result
     # This fixes the bug where failed notifications caused infinite reprocessing
     try:
@@ -376,9 +367,7 @@ def process_file(file_path: str, config: dict[str, str]) -> None:
             file_hash=file_hash,
             status=status,
             email_sent=email_sent,
-            telegram_sent=telegram_sent,
-            error_message=error_message,
-            retry_count=3 if errors else 0
+            telegram_sent=telegram_sent
         )
 
         # Log result
@@ -391,7 +380,7 @@ def process_file(file_path: str, config: dict[str, str]) -> None:
                 f"telegram={'OK' if telegram_sent else 'FAILED'}"
             )
         else:
-            logging.error(f"All notifications failed for {filename}: {error_message}")
+            logging.error(f"All notifications failed for {filename}")
 
     except Exception as e:
         logging.error(f"Failed to save {filename} to database: {e}")

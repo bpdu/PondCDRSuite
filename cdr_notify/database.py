@@ -27,8 +27,6 @@ def init_db() -> None:
                     status TEXT NOT NULL,
                     email_sent BOOLEAN DEFAULT 0,
                     telegram_sent BOOLEAN DEFAULT 0,
-                    error_message TEXT,
-                    retry_count INTEGER DEFAULT 0,
                     changed TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
                 """
@@ -45,14 +43,6 @@ def init_db() -> None:
             if 'telegram_sent' not in existing_columns:
                 cur.execute("ALTER TABLE cdr_files ADD COLUMN telegram_sent BOOLEAN DEFAULT 0")
                 logging.info("Database migration: Added telegram_sent column")
-
-            if 'error_message' not in existing_columns:
-                cur.execute("ALTER TABLE cdr_files ADD COLUMN error_message TEXT")
-                logging.info("Database migration: Added error_message column")
-
-            if 'retry_count' not in existing_columns:
-                cur.execute("ALTER TABLE cdr_files ADD COLUMN retry_count INTEGER DEFAULT 0")
-                logging.info("Database migration: Added retry_count column")
 
             conn.commit()
             logging.info("Database initialized successfully")
@@ -78,12 +68,10 @@ def insert_file(
     file_hash: str,
     status: str,
     email_sent: bool,
-    telegram_sent: bool,
-    error_message: str | None = None,
-    retry_count: int = 0
+    telegram_sent: bool
 ) -> bool:
     """
-    Insert file record with detailed notification status.
+    Insert file record with notification status.
 
     Args:
         filename: Name of the CDR file
@@ -91,8 +79,6 @@ def insert_file(
         status: Overall status (SENT/PARTIAL/FAILED)
         email_sent: Whether email notification was sent
         telegram_sent: Whether telegram notification was sent
-        error_message: Optional error details
-        retry_count: Number of retry attempts made
 
     Returns:
         True if insert was successful
@@ -105,9 +91,9 @@ def insert_file(
             cur = conn.cursor()
             cur.execute(
                 """INSERT INTO cdr_files
-                   (filename, file_hash, status, email_sent, telegram_sent, error_message, retry_count)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (filename, file_hash, status, email_sent, telegram_sent, error_message, retry_count)
+                   (filename, file_hash, status, email_sent, telegram_sent)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (filename, file_hash, status, email_sent, telegram_sent)
             )
             conn.commit()
             return True
