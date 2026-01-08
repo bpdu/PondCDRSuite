@@ -3,7 +3,6 @@
 import logging
 
 import utils
-from utils import ConfigError
 
 
 def main() -> None:
@@ -33,11 +32,8 @@ def main() -> None:
         for file_path in new_files:
             utils.process_file(file_path, config)
 
-    except ConfigError as e:
-        logging.error(f"Configuration error: {e}")
-        exit(1)
     except Exception as e:
-        logging.exception(f"Unexpected error: {e}")
+        logging.exception(f"Error: {e}")
         exit(1)
 
 
