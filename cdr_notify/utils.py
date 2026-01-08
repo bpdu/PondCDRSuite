@@ -4,9 +4,7 @@ import datetime
 import hashlib
 import logging
 import os
-import time
-from functools import wraps
-from typing import Callable, TypeVar, Tuple
+from typing import Tuple
 
 import database
 from email_sender import send_email
@@ -27,47 +25,6 @@ class ConfigError(CDRNotifyError):
 class NotificationError(CDRNotifyError):
     """Notification sending failures"""
     pass
-
-
-T = TypeVar('T')
-
-
-def retry(max_attempts: int = 3, backoff_base: float = 2.0):
-    """
-    Simple retry decorator with exponential backoff.
-
-    Args:
-        max_attempts: Maximum number of attempts (default: 3)
-        backoff_base: Base for exponential backoff in seconds (default: 2.0)
-                     Delays will be: 2s, 4s, 8s
-    """
-    def decorator(func: Callable[..., T]) -> Callable[..., T]:
-        @wraps(func)
-        def wrapper(*args, **kwargs) -> T:
-            last_exception = None
-
-            for attempt in range(1, max_attempts + 1):
-                try:
-                    return func(*args, **kwargs)
-                except NotificationError as e:
-                    last_exception = e
-                    if attempt < max_attempts:
-                        delay = backoff_base ** attempt
-                        logging.warning(
-                            f"{func.__name__} attempt {attempt}/{max_attempts} failed: {e}. "
-                            f"Retrying in {delay}s..."
-                        )
-                        time.sleep(delay)
-                    else:
-                        logging.error(
-                            f"{func.__name__} failed after {max_attempts} attempts: {e}"
-                        )
-
-            # All retries exhausted
-            raise last_exception
-
-        return wrapper
-    return decorator
 
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
