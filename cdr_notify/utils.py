@@ -138,12 +138,13 @@ def build_notification(full_path: str) -> dict[str, str]:
 
     subject = load_template("email_subject.txt").format(filename=filename).strip()
     body = load_template("email_body.txt").format(filename=filename, changed=changed).rstrip() + "\n"
+    telegram_text = load_template("telegram_message.txt").format(filename=filename, changed=changed).rstrip()
 
     return {
         "filename": filename,
         "subject": subject,
         "body": body,
-        "telegram_text": body,
+        "telegram_text": telegram_text,
     }
 
 

@@ -1,0 +1,7 @@
+🔔 New CDR file arrived
+
+📄 File: {filename}
+🕐 Created: {changed}
+
+—
+Pond cdr_notify service
