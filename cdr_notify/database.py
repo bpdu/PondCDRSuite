@@ -12,12 +12,10 @@ def get_connection() -> sqlite3.Connection:
 
 
 def init_db() -> None:
-    """Initialize database with schema migration support"""
+    """Initialize database"""
     try:
         with get_connection() as conn:
             cur = conn.cursor()
-
-            # Create table with new schema
             cur.execute(
                 """
                 CREATE TABLE IF NOT EXISTS cdr_files (
@@ -31,19 +29,6 @@ def init_db() -> None:
                 );
                 """
             )
-
-            # Migrate existing databases - add new columns if they don't exist
-            cur.execute("PRAGMA table_info(cdr_files)")
-            existing_columns = {row[1] for row in cur.fetchall()}
-
-            if 'email_sent' not in existing_columns:
-                cur.execute("ALTER TABLE cdr_files ADD COLUMN email_sent BOOLEAN DEFAULT 0")
-                logging.info("Database migration: Added email_sent column")
-
-            if 'telegram_sent' not in existing_columns:
-                cur.execute("ALTER TABLE cdr_files ADD COLUMN telegram_sent BOOLEAN DEFAULT 0")
-                logging.info("Database migration: Added telegram_sent column")
-
             conn.commit()
             logging.info("Database initialized successfully")
 
