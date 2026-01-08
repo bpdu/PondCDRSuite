@@ -4,13 +4,80 @@ import datetime
 import hashlib
 import logging
 import os
+import time
 from enum import Enum
+from functools import wraps
+from typing import Callable, TypeVar
 
 import database
 
 
+# Custom Exceptions
+class CDRNotifyError(Exception):
+    """Base exception for CDR notify application"""
+    pass
+
+
+class ConfigError(CDRNotifyError):
+    """Configuration validation errors"""
+    pass
+
+
+class NotificationError(CDRNotifyError):
+    """Notification sending failures"""
+    pass
+
+
+class DatabaseError(CDRNotifyError):
+    """Database operation failures"""
+    pass
+
+
 class FileStatus(Enum):
     SENT = "SENT"
+    PARTIAL_SUCCESS = "PARTIAL"
+    FAILED = "FAILED"
+
+
+T = TypeVar('T')
+
+
+def retry(max_attempts: int = 3, backoff_base: float = 2.0):
+    """
+    Simple retry decorator with exponential backoff.
+
+    Args:
+        max_attempts: Maximum number of attempts (default: 3)
+        backoff_base: Base for exponential backoff in seconds (default: 2.0)
+                     Delays will be: 2s, 4s, 8s
+    """
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> T:
+            last_exception = None
+
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except NotificationError as e:
+                    last_exception = e
+                    if attempt < max_attempts:
+                        delay = backoff_base ** attempt
+                        logging.warning(
+                            f"{func.__name__} attempt {attempt}/{max_attempts} failed: {e}. "
+                            f"Retrying in {delay}s..."
+                        )
+                        time.sleep(delay)
+                    else:
+                        logging.error(
+                            f"{func.__name__} failed after {max_attempts} attempts: {e}"
+                        )
+
+            # All retries exhausted
+            raise last_exception
+
+        return wrapper
+    return decorator
 
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -123,10 +190,41 @@ def is_known_file(full_path: str) -> bool:
         return False
 
 
-def insert_file_record(full_path: str, file_hash: str, status: FileStatus) -> bool:
+def insert_file_record(
+    full_path: str,
+    file_hash: str,
+    status: FileStatus,
+    email_sent: bool,
+    telegram_sent: bool,
+    error_message: str | None = None,
+    retry_count: int = 0
+) -> bool:
+    """
+    Insert file record with detailed status.
+
+    Args:
+        full_path: Full path to file
+        file_hash: SHA256 hash of file
+        status: Overall processing status (SENT/PARTIAL_SUCCESS/FAILED)
+        email_sent: Whether email was sent successfully
+        telegram_sent: Whether telegram was sent successfully
+        error_message: Optional error details
+        retry_count: Number of retry attempts made
+
+    Returns:
+        True if insert was successful, False otherwise
+    """
     filename = get_filename(full_path)
     try:
-        return database.insert_file(filename, file_hash, status.value)
-    except Exception:
+        return database.insert_file(
+            filename=filename,
+            file_hash=file_hash,
+            status=status.value,
+            email_sent=email_sent,
+            telegram_sent=telegram_sent,
+            error_message=error_message,
+            retry_count=retry_count
+        )
+    except Exception as e:
         logging.exception("Database insert error for %s", filename)
         return False
