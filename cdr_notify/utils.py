@@ -7,9 +7,11 @@ import os
 import time
 from enum import Enum
 from functools import wraps
-from typing import Callable, TypeVar
+from typing import Callable, TypeVar, Tuple
 
 import database
+from email_sender import EmailSender
+from telegram_sender import TelegramSender
 
 
 # Custom Exceptions
@@ -228,3 +230,174 @@ def insert_file_record(
     except Exception as e:
         logging.exception("Database insert error for %s", filename)
         return False
+
+
+# ============================================================================
+# Business Logic Functions
+# ============================================================================
+
+def validate_config(config: dict[str, str]) -> None:
+    """
+    Validate required configuration fields.
+
+    Raises:
+        ConfigError: If required config is missing or invalid
+    """
+    # Validate CDR_FOLDER
+    cdr_folder = config.get("CDR_FOLDER", "").strip()
+    if not cdr_folder:
+        raise ConfigError(f"CDR_FOLDER is not set in {CONFIG_PATH}")
+    if not os.path.isdir(cdr_folder):
+        raise ConfigError(f"CDR_FOLDER does not exist: {cdr_folder}")
+
+    # Validate email config if enabled
+    if is_enabled(config.get("EMAIL_SEND", "")):
+        required_email = ["SMTP_HOST", "EMAIL_FROM", "EMAIL_TO"]
+        missing = [key for key in required_email if not config.get(key, "").strip()]
+        if missing:
+            raise ConfigError(f"Missing required email config: {', '.join(missing)}")
+
+    # Validate telegram config if enabled
+    if is_enabled(config.get("TELEGRAM_SEND", "")):
+        required_telegram = ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"]
+        missing = [key for key in required_telegram if not config.get(key, "").strip()]
+        if missing:
+            raise ConfigError(f"Missing required Telegram config: {', '.join(missing)}")
+
+    logging.info("Configuration validated successfully")
+
+
+def init_database(config: dict[str, str]) -> None:
+    """
+    Initialize database with optional custom DB_NAME.
+
+    Args:
+        config: Configuration dictionary
+    """
+    db_name = config.get("DB_NAME", "").strip()
+    if db_name:
+        os.environ["DB_NAME"] = db_name
+
+    database.init_db()
+    logging.info("Database initialized")
+
+
+def get_new_files(config: dict[str, str]) -> list[str]:
+    """
+    Get list of new CDR files that haven't been processed yet.
+
+    Args:
+        config: Configuration dictionary
+
+    Returns:
+        List of full paths to new files
+    """
+    cdr_folder = config["CDR_FOLDER"].strip()
+    all_files = get_files(cdr_folder)
+    new_files = [f for f in all_files if not is_known_file(f)]
+
+    logging.info(f"Starting CDR notify service")
+    logging.info(f"Scanning folder: {cdr_folder}")
+    logging.info(f"Total files: {len(all_files)}, New files: {len(new_files)}")
+
+    return new_files
+
+
+def send_notifications(file_path: str, config: dict[str, str]) -> Tuple[bool, bool, list[str]]:
+    """
+    Send email and Telegram notifications for a file.
+
+    Args:
+        file_path: Full path to the CDR file
+        config: Configuration dictionary
+
+    Returns:
+        Tuple of (email_sent, telegram_sent, errors)
+    """
+    email_sent = False
+    telegram_sent = False
+    errors = []
+
+    # Initialize senders
+    email_sender = EmailSender(config)
+    telegram_sender = TelegramSender(config)
+
+    # Try email
+    try:
+        email_sent = email_sender.send(file_path)
+    except NotificationError as e:
+        errors.append(f"Email: {e}")
+        logging.error(f"Email notification failed for {get_filename(file_path)}: {e}")
+
+    # Try Telegram
+    try:
+        telegram_sent = telegram_sender.send(file_path)
+    except NotificationError as e:
+        errors.append(f"Telegram: {e}")
+        logging.error(f"Telegram notification failed for {get_filename(file_path)}: {e}")
+
+    return email_sent, telegram_sent, errors
+
+
+def process_file(file_path: str, config: dict[str, str]) -> None:
+    """
+    Process a single CDR file: send notifications and record in database.
+
+    This function implements the critical bug fix: files are ALWAYS saved to DB,
+    even if notifications fail, to prevent infinite reprocessing.
+
+    Args:
+        file_path: Full path to the CDR file
+        config: Configuration dictionary
+    """
+    filename = get_filename(file_path)
+
+    # Calculate file hash
+    file_hash = calculate_hash(file_path)
+    if not file_hash:
+        logging.error(f"Failed to calculate hash for {filename}, skipping")
+        return
+
+    # Send notifications (with retries)
+    email_sent, telegram_sent, errors = send_notifications(file_path, config)
+
+    # Determine status
+    if email_sent and telegram_sent:
+        status = FileStatus.SENT
+    elif email_sent or telegram_sent:
+        status = FileStatus.PARTIAL_SUCCESS
+    else:
+        status = FileStatus.FAILED
+
+    # Get error message
+    error_message = "; ".join(errors) if errors else None
+
+    # CRITICAL: Always save to database, regardless of notification result
+    # This fixes the bug where failed notifications caused infinite reprocessing
+    try:
+        insert_file_record(
+            full_path=file_path,
+            file_hash=file_hash,
+            status=status,
+            email_sent=email_sent,
+            telegram_sent=telegram_sent,
+            error_message=error_message,
+            retry_count=3 if errors else 0
+        )
+
+        # Log result
+        if status == FileStatus.SENT:
+            logging.info(f"File processed successfully: {filename}")
+        elif status == FileStatus.PARTIAL_SUCCESS:
+            logging.warning(
+                f"Partial success for {filename}: "
+                f"email={'OK' if email_sent else 'FAILED'}, "
+                f"telegram={'OK' if telegram_sent else 'FAILED'}"
+            )
+        else:
+            logging.error(f"All notifications failed for {filename}: {error_message}")
+
+    except Exception as e:
+        logging.error(f"Failed to save {filename} to database: {e}")
+        # Note: File will be reprocessed on next run, but this is acceptable
+        # since it's a database failure, not a notification failure
