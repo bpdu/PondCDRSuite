@@ -22,7 +22,6 @@ def init_db() -> None:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     filename TEXT NOT NULL,
                     file_hash TEXT UNIQUE NOT NULL,
-                    status TEXT NOT NULL,
                     email_sent BOOLEAN DEFAULT 0,
                     telegram_sent BOOLEAN DEFAULT 0,
                     changed TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -45,7 +44,7 @@ def get_file_by_hash(file_hash: str) -> Optional[tuple]:
         file_hash: SHA256 hash of filename + content
 
     Returns:
-        Tuple of (id, filename, file_hash, status, email_sent, telegram_sent, changed)
+        Tuple of (id, filename, file_hash, email_sent, telegram_sent, changed)
         or None if not found
     """
     try:
@@ -61,7 +60,6 @@ def get_file_by_hash(file_hash: str) -> Optional[tuple]:
 def insert_file(
     filename: str,
     file_hash: str,
-    status: str,
     email_sent: bool,
     telegram_sent: bool
 ) -> bool:
@@ -72,7 +70,6 @@ def insert_file(
     Args:
         filename: Name of the CDR file
         file_hash: SHA256 hash of filename + content (unique key)
-        status: Overall status (SENT/PARTIAL/FAILED)
         email_sent: Whether email notification was sent
         telegram_sent: Whether telegram notification was sent
 
@@ -87,9 +84,9 @@ def insert_file(
             cur = conn.cursor()
             cur.execute(
                 """INSERT OR REPLACE INTO cdr_files
-                   (filename, file_hash, status, email_sent, telegram_sent)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (filename, file_hash, status, email_sent, telegram_sent)
+                   (filename, file_hash, email_sent, telegram_sent)
+                   VALUES (?, ?, ?, ?)""",
+                (filename, file_hash, email_sent, telegram_sent)
             )
             conn.commit()
             return True

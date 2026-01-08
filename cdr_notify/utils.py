@@ -5,7 +5,6 @@ import hashlib
 import logging
 import os
 import time
-from enum import Enum
 from functools import wraps
 from typing import Callable, TypeVar, Tuple
 
@@ -28,12 +27,6 @@ class ConfigError(CDRNotifyError):
 class NotificationError(CDRNotifyError):
     """Notification sending failures"""
     pass
-
-
-class FileStatus(Enum):
-    SENT = "SENT"
-    PARTIAL_SUCCESS = "PARTIAL"
-    FAILED = "FAILED"
 
 
 T = TypeVar('T')
@@ -199,7 +192,6 @@ def is_known_file(full_path: str) -> bool:
 def insert_file_record(
     full_path: str,
     file_hash: str,
-    status: FileStatus,
     email_sent: bool,
     telegram_sent: bool
 ) -> bool:
@@ -209,7 +201,6 @@ def insert_file_record(
     Args:
         full_path: Full path to file
         file_hash: SHA256 hash of file
-        status: Overall processing status (SENT/PARTIAL_SUCCESS/FAILED)
         email_sent: Whether email was sent successfully
         telegram_sent: Whether telegram was sent successfully
 
@@ -221,7 +212,6 @@ def insert_file_record(
         return database.insert_file(
             filename=filename,
             file_hash=file_hash,
-            status=status.value,
             email_sent=email_sent,
             telegram_sent=telegram_sent
         )
@@ -361,29 +351,20 @@ def process_file(file_path: str, config: dict[str, str]) -> None:
     # Send notifications (with retries)
     email_sent, telegram_sent, errors = send_notifications(file_path, config)
 
-    # Determine status
-    if email_sent and telegram_sent:
-        status = FileStatus.SENT
-    elif email_sent or telegram_sent:
-        status = FileStatus.PARTIAL_SUCCESS
-    else:
-        status = FileStatus.FAILED
-
     # CRITICAL: Always save to database, regardless of notification result
     # This fixes the bug where failed notifications caused infinite reprocessing
     try:
         insert_file_record(
             full_path=file_path,
             file_hash=file_hash,
-            status=status,
             email_sent=email_sent,
             telegram_sent=telegram_sent
         )
 
-        # Log result
-        if status == FileStatus.SENT:
+        # Log result based on notification outcomes
+        if email_sent and telegram_sent:
             logging.info(f"File processed successfully: {filename}")
-        elif status == FileStatus.PARTIAL_SUCCESS:
+        elif email_sent or telegram_sent:
             logging.warning(
                 f"Partial success for {filename}: "
                 f"email={'OK' if email_sent else 'FAILED'}, "
