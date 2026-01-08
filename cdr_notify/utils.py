@@ -30,11 +30,6 @@ class NotificationError(CDRNotifyError):
     pass
 
 
-class DatabaseError(CDRNotifyError):
-    """Database operation failures"""
-    pass
-
-
 class FileStatus(Enum):
     SENT = "SENT"
     PARTIAL_SUCCESS = "PARTIAL"
