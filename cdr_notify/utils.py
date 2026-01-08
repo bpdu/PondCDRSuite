@@ -89,10 +89,6 @@ TELEGRAM_ENV_PATH = os.path.join(_BASE_DIR, "secrets", "telegram.env")
 RESOURCES_DIR = os.path.join(_BASE_DIR, "resources")
 
 
-def is_enabled(value: str) -> bool:
-    return value.strip().lower() in {"1", "true", "yes", "y", "on"}
-
-
 def load_config() -> dict[str, str]:
     config: dict[str, str] = {}
 
@@ -251,14 +247,14 @@ def validate_config(config: dict[str, str]) -> None:
         raise ConfigError(f"CDR_FOLDER does not exist: {cdr_folder}")
 
     # Validate email config if enabled
-    if is_enabled(config.get("EMAIL_SEND", "")):
+    if config.get("EMAIL_SEND", "").strip().lower() == "true":
         required_email = ["SMTP_HOST", "EMAIL_FROM", "EMAIL_TO"]
         missing = [key for key in required_email if not config.get(key, "").strip()]
         if missing:
             raise ConfigError(f"Missing required email config: {', '.join(missing)}")
 
     # Validate telegram config if enabled
-    if is_enabled(config.get("TELEGRAM_SEND", "")):
+    if config.get("TELEGRAM_SEND", "").strip().lower() == "true":
         required_telegram = ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"]
         missing = [key for key in required_telegram if not config.get(key, "").strip()]
         if missing:

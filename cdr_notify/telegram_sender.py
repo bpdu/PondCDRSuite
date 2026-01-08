@@ -13,7 +13,7 @@ class TelegramSender:
 
     def __init__(self, config: Dict[str, str]):
         self.config = config
-        self.enabled = utils.is_enabled(config.get("TELEGRAM_SEND", ""))
+        self.enabled = config.get("TELEGRAM_SEND", "").strip().lower() == "true"
 
         if self.enabled:
             self._validate_config()

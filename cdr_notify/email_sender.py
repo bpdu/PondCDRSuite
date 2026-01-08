@@ -13,7 +13,7 @@ class EmailSender:
 
     def __init__(self, config: Dict[str, str]):
         self.config = config
-        self.enabled = utils.is_enabled(config.get("EMAIL_SEND", ""))
+        self.enabled = config.get("EMAIL_SEND", "").strip().lower() == "true"
 
         # Validate config if enabled
         if self.enabled:
