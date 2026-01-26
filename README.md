@@ -5,7 +5,25 @@
 
 A comprehensive toolkit for processing Call Detail Records (CDRs). This package provides tools for synchronization, alerting, searching, and managing CDR files.
 
-## Features
+## Tools
+
+### CDR Notify
+
+Automated notification service for Call Detail Records.
+
+**Features:**
+- Monitors CDR folder for new files
+- Email and Telegram notifications
+- Duplicate detection via file hashing
+- Automatic deployment via GitHub Actions
+
+**Location:** [cdr_notify/](cdr_notify/)
+
+**Documentation:** See [cdr_notify/README.md](cdr_notify/README.md)
+
+**Deployment:** Automatic via GitHub Actions on push to main branch
+
+## Additional Features
 
 - **CDR Synchronization**: Automated sync of CDR files from various sources
 - **Alert System**: Email notifications for CDR-related events

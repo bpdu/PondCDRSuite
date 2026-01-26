@@ -210,3 +210,11 @@ __marimo__/
 .db
 secrets\
 *.env
+
+# Keep example files but exclude actual configs
+!secrets/*.example
+!config/*.example
+
+# Backup files
+*.backup
+*.bak
