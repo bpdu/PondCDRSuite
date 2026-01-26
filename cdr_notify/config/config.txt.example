@@ -1,0 +1,15 @@
+# CDR Notify Configuration
+# Copy this to config.txt and edit with your values
+
+CDR_FOLDER=/path/to/cdr_folder
+DB_NAME=~/PondCDRSuite/cdr_notify/cdr_files.db
+
+# Notification settings
+TELEGRAM_SEND=True
+EMAIL_SEND=False
+
+# Email settings (required if EMAIL_SEND=True)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+EMAIL_FROM=noreply@example.com
+EMAIL_TO=support@example.com
