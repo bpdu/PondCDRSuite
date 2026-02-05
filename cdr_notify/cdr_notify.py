@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 
 import database
 import email_sender
@@ -9,9 +10,11 @@ import utils
 
 
 def main() -> None:
+    logging.Formatter.converter = time.gmtime
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(message)s",
+        format="%(asctime)s - [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M GMT",
     )
 
     config = utils.load_config()

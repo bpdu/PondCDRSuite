@@ -14,7 +14,10 @@ def send_email(
         smtp_host = config.get("SMTP_HOST", "").strip()
         smtp_port = int(config.get("SMTP_PORT", "587").strip() or "587")
         email_from = config.get("EMAIL_FROM", "").strip()
-        email_to = config.get("EMAIL_TO", "").strip()
+        recipients = [
+            addr.strip() for addr in config.get("EMAIL_TO", "").split(",")
+            if addr.strip()
+        ]
         smtp_user = config.get("SMTP_USER", "").strip()
         smtp_password = config.get("SMTP_PASSWORD", "").strip()
 
@@ -22,13 +25,13 @@ def send_email(
             raise RuntimeError(f"SMTP_HOST is not set in {utils.CONFIG_PATH}")
         if not email_from:
             raise RuntimeError(f"EMAIL_FROM is not set in {utils.CONFIG_PATH}")
-        if not email_to:
+        if not recipients:
             raise RuntimeError(f"EMAIL_TO is not set in {utils.CONFIG_PATH}")
 
         msg = EmailMessage()
         msg["Subject"] = notification["subject"]
         msg["From"] = email_from
-        msg["To"] = email_to
+        msg["To"] = ", ".join(recipients)
         msg.set_content(notification["body"])
 
         with open(full_path, "rb") as f:
