@@ -1,4 +1,4 @@
-# utils.py
+from __future__ import annotations
 
 import datetime
 import hashlib
@@ -6,7 +6,7 @@ import logging
 import os
 from enum import Enum
 
-import database
+from . import database
 
 
 class FileStatus(Enum):
@@ -16,7 +16,8 @@ class FileStatus(Enum):
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 CONFIG_PATH = os.path.normpath(os.path.join(_BASE_DIR, "config", "config.txt"))
-TELEGRAM_ENV_PATH = os.path.join(_BASE_DIR, "secrets", "telegram.env")
+TELEGRAM_ENV_PATH = os.path.join(_BASE_DIR, ".env", "telegram.env")
+SMTP_ENV_PATH = os.path.join(_BASE_DIR, ".env", "smtp.env")
 RESOURCES_DIR = os.path.join(_BASE_DIR, "resources")
 
 
@@ -34,6 +35,9 @@ def load_config() -> dict[str, str]:
 
     if os.path.isfile(TELEGRAM_ENV_PATH):
         _load_env_file(TELEGRAM_ENV_PATH, config)
+
+    if os.path.isfile(SMTP_ENV_PATH):
+        _load_env_file(SMTP_ENV_PATH, config)
 
     return config
 
@@ -67,12 +71,19 @@ def build_notification(full_path: str) -> dict[str, str]:
 
     changed = ""
     try:
-        changed = datetime.datetime.fromtimestamp(os.path.getmtime(full_path)).strftime("%Y-%m-%d %H:%M:%S")
+        changed = datetime.datetime.fromtimestamp(
+            os.path.getmtime(full_path)
+        ).strftime("%Y-%m-%d %H:%M:%S")
     except Exception:
         logging.exception("Failed to get mtime for %s", full_path)
 
     subject = load_template("email_subject.txt").format(filename=filename).strip()
-    body = load_template("email_body.txt").format(filename=filename, changed=changed).rstrip() + "\n"
+    body = (
+        load_template("email_body.txt")
+        .format(filename=filename, changed=changed)
+        .rstrip()
+        + "\n"
+    )
 
     return {
         "filename": filename,
@@ -83,25 +94,19 @@ def build_notification(full_path: str) -> dict[str, str]:
 
 
 def get_files(cdr_folder: str) -> list[str]:
-    try:
-        if not os.path.isdir(cdr_folder):
-            raise RuntimeError(f"CDR_FOLDER does not exist: {cdr_folder}")
+    if not os.path.isdir(cdr_folder):
+        raise RuntimeError(f"CDR_FOLDER does not exist: {cdr_folder}")
 
-        files: list[str] = []
-        for name in os.listdir(cdr_folder):
-            if name.startswith("."):
-                continue
+    files: list[str] = []
+    for name in sorted(os.listdir(cdr_folder)):
+        if name.startswith("."):
+            continue
 
-            full_path = os.path.join(cdr_folder, name)
-            if os.path.isfile(full_path):
-                files.append(full_path)
+        full_path = os.path.join(cdr_folder, name)
+        if os.path.isfile(full_path):
+            files.append(full_path)
 
-        files.sort()
-        return files
-
-    except Exception:
-        logging.exception("Failed to list files in %s", cdr_folder)
-        return []
+    return files
 
 
 def calculate_hash(filepath: str) -> str | None:
@@ -116,17 +121,9 @@ def calculate_hash(filepath: str) -> str | None:
 
 def is_known_file(full_path: str) -> bool:
     filename = get_filename(full_path)
-    try:
-        return database.get_file_by_filename(filename) is not None
-    except Exception:
-        logging.exception("Database read error for filename %s", filename)
-        return False
+    return database.get_file_by_filename(filename) is not None
 
 
 def insert_file_record(full_path: str, file_hash: str, status: FileStatus) -> bool:
     filename = get_filename(full_path)
-    try:
-        return database.insert_file(filename, file_hash, status.value)
-    except Exception:
-        logging.exception("Database insert error for %s", filename)
-        return False
+    return database.insert_file(filename, file_hash, status.value)

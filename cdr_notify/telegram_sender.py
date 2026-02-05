@@ -1,15 +1,14 @@
+from __future__ import annotations
 
 import logging
 
 import requests
 
-import utils
+from . import utils
 
 
-def send_message(full_path: str) -> bool:
+def send_message(notification: dict[str, str], config: dict[str, str]) -> bool:
     try:
-        config = utils.load_config()
-
         if not utils.is_enabled(config.get("TELEGRAM_SEND", "")):
             return True
 
@@ -17,14 +16,14 @@ def send_message(full_path: str) -> bool:
         chat_id = config.get("TELEGRAM_CHAT_ID", "").strip()
 
         if not token:
-            raise RuntimeError(f"TELEGRAM_BOT_TOKEN is not set in {utils.TELEGRAM_ENV_PATH}")
+            raise RuntimeError("TELEGRAM_BOT_TOKEN is not set")
         if not chat_id:
-            raise RuntimeError(f"TELEGRAM_CHAT_ID is not set in {utils.TELEGRAM_ENV_PATH}")
+            raise RuntimeError("TELEGRAM_CHAT_ID is not set")
 
         url = f"https://api.telegram.org/bot{token}/sendMessage"
         payload = {
             "chat_id": chat_id,
-            "text": utils.build_notification(full_path)["telegram_text"],
+            "text": notification["telegram_text"],
         }
 
         r = requests.post(url, json=payload, timeout=10)
@@ -33,5 +32,7 @@ def send_message(full_path: str) -> bool:
         return True
 
     except Exception:
-        logging.exception("Failed to send telegram message for %s", utils.get_filename(full_path))
+        logging.exception(
+            "Failed to send telegram message for %s", notification["filename"]
+        )
         return False

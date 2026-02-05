@@ -207,6 +207,9 @@ marimo/_lsp/
 __marimo__/
 .idea/
 *.iml
-.db
-secrets\
+*.db
 *.env
+
+# Claude Code
+.claude/
+CLAUDE.md
