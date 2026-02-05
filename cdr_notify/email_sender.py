@@ -57,8 +57,8 @@ def send_email(
             "message": {
                 "subject": notification["subject"],
                 "body": {
-                    "contentType": "Text",
-                    "content": notification["body"],
+                    "contentType": "HTML",
+                    "content": notification["body"].replace("\n", "<br>"),
                 },
                 "toRecipients": [
                     {"emailAddress": {"address": addr}} for addr in recipients
