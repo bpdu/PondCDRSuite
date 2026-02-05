@@ -1,0 +1,11 @@
+Dear Support Team,
+
+A new <b>Plintron Fraud report</b> has arrived on the Pond server. You are subscribed to get a notification about this.
+
+<b>File</b>: {filename}
+<b>Created at</b>: {changed}
+
+This notification was generated automatically by the Pond cdr_notify service. Please do not reply.
+
+Best regards,
+<b>PondCDRSuite Team</b>

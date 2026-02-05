@@ -84,12 +84,18 @@ def build_notification(full_path: str) -> dict[str, str]:
         .rstrip()
         + "\n"
     )
+    telegram_text = (
+        load_template("telegram_body.txt")
+        .format(filename=filename, changed=changed)
+        .rstrip()
+        + "\n"
+    )
 
     return {
         "filename": filename,
         "subject": subject,
         "body": body,
-        "telegram_text": body,
+        "telegram_text": telegram_text,
     }
 
 

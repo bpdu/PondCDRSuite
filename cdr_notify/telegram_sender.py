@@ -23,6 +23,7 @@ def send_message(full_path: str, notification: dict[str, str], config: dict[str,
                 data={
                     "chat_id": chat_id,
                     "caption": notification["telegram_text"],
+                    "parse_mode": "HTML",
                 },
                 files={"document": (notification["filename"], f)},
                 timeout=30,
