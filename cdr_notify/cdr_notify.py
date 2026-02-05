@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import logging
 
-from . import database
-from . import email_sender
-from . import telegram_sender
-from . import utils
+import database
+import email_sender
+import telegram_sender
+import utils
 
 
 def main() -> None:
@@ -43,7 +43,7 @@ def main() -> None:
         if send_email:
             email_sender.send_email(full_path, notification, config)
         if send_telegram:
-            telegram_sender.send_message(notification, config)
+            telegram_sender.send_message(full_path, notification, config)
 
         utils.insert_file_record(full_path, file_hash, utils.FileStatus.SENT)
         logging.info("File processed successfully: %s", utils.get_filename(full_path))

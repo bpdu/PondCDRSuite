@@ -6,7 +6,7 @@ import logging
 import os
 from enum import Enum
 
-from . import database
+import database
 
 
 class FileStatus(Enum):

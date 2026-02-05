@@ -4,7 +4,7 @@ import logging
 import smtplib
 from email.message import EmailMessage
 
-from . import utils
+import utils
 
 
 def send_email(
