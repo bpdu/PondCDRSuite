@@ -17,7 +17,7 @@ _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 CONFIG_PATH = os.path.normpath(os.path.join(_BASE_DIR, "config", "config.txt"))
 TELEGRAM_ENV_PATH = os.path.join(_BASE_DIR, ".env", "telegram.env")
-SMTP_ENV_PATH = os.path.join(_BASE_DIR, ".env", "smtp.env")
+MSGRAPH_ENV_PATH = os.path.join(_BASE_DIR, ".env", "msgraph.env")
 RESOURCES_DIR = os.path.join(_BASE_DIR, "resources")
 
 
@@ -36,8 +36,8 @@ def load_config() -> dict[str, str]:
     if os.path.isfile(TELEGRAM_ENV_PATH):
         _load_env_file(TELEGRAM_ENV_PATH, config)
 
-    if os.path.isfile(SMTP_ENV_PATH):
-        _load_env_file(SMTP_ENV_PATH, config)
+    if os.path.isfile(MSGRAPH_ENV_PATH):
+        _load_env_file(MSGRAPH_ENV_PATH, config)
 
     return config
 

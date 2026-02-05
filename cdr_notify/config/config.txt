@@ -4,11 +4,7 @@ DB_NAME=/path/to/cdr_files.db
 TELEGRAM_SEND=True
 EMAIL_SEND=False
 
-
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-
-EMAIL_FROM=noreply@example.com
+EMAIL_FROM=cdr-notify@example.com
 EMAIL_TO=support@example.com, admin@example.com
 
 
