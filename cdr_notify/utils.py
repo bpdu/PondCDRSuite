@@ -19,6 +19,7 @@ CONFIG_PATH = os.path.normpath(os.path.join(_BASE_DIR, "config", "config.txt"))
 TELEGRAM_ENV_PATH = os.path.join(_BASE_DIR, ".env", "telegram.env")
 MSGRAPH_ENV_PATH = os.path.join(_BASE_DIR, ".env", "msgraph.env")
 RESOURCES_DIR = os.path.join(_BASE_DIR, "resources")
+MAX_FILE_SIZE = 1 * 1024 * 1024  # 1 MB
 
 
 def is_enabled(value: str) -> bool:
@@ -77,19 +78,20 @@ def build_notification(full_path: str) -> dict[str, str]:
     except Exception:
         logging.exception("Failed to get mtime for %s", full_path)
 
-    subject = load_template("email_subject.txt").format(filename=filename).strip()
-    body = (
-        load_template("email_body.txt")
-        .format(filename=filename, changed=changed)
-        .rstrip()
-        + "\n"
-    )
-    telegram_text = (
-        load_template("telegram_body.txt")
-        .format(filename=filename, changed=changed)
-        .rstrip()
-        + "\n"
-    )
+    replacements = {"{filename}": filename, "{changed}": changed}
+
+    subject = load_template("email_subject.txt")
+    body = load_template("email_body.txt")
+    telegram_text = load_template("telegram_body.txt")
+
+    for key, value in replacements.items():
+        subject = subject.replace(key, value)
+        body = body.replace(key, value)
+        telegram_text = telegram_text.replace(key, value)
+
+    subject = subject.strip()
+    body = body.rstrip() + "\n"
+    telegram_text = telegram_text.rstrip() + "\n"
 
     return {
         "filename": filename,
@@ -109,14 +111,23 @@ def get_files(cdr_folder: str) -> list[str]:
             continue
 
         full_path = os.path.join(cdr_folder, name)
-        if os.path.isfile(full_path):
-            files.append(full_path)
+        try:
+            if not os.path.isfile(full_path) or os.path.islink(full_path):
+                continue
+        except OSError:
+            continue
+
+        files.append(full_path)
 
     return files
 
 
 def calculate_hash(filepath: str) -> str | None:
     try:
+        file_size = os.path.getsize(filepath)
+        if file_size > MAX_FILE_SIZE:
+            logging.warning("File too large (%d bytes), skipping: %s", file_size, filepath)
+            return None
         with open(filepath, "rb") as f:
             content = f.read()
         return hashlib.sha256(filepath.encode("utf-8") + content).hexdigest()

@@ -41,12 +41,21 @@ def main() -> None:
 
         notification = utils.build_notification(full_path)
 
+        email_ok = True
+        telegram_ok = True
         if send_email:
-            email_sender.send_email(full_path, notification, config)
+            email_ok = email_sender.send_email(full_path, notification, config)
         if send_telegram:
-            telegram_sender.send_message(full_path, notification, config)
+            telegram_ok = telegram_sender.send_message(full_path, notification, config)
 
-        utils.insert_file_record(full_path, file_hash, utils.FileStatus.SENT)
+        if not email_ok or not telegram_ok:
+            logging.warning("Skipping DB record for %s due to send failure", utils.get_filename(full_path))
+            continue
+
+        if not utils.insert_file_record(full_path, file_hash, utils.FileStatus.SENT):
+            logging.error("Failed to save DB record for %s", utils.get_filename(full_path))
+            continue
+
         logging.info("File processed successfully: %s", utils.get_filename(full_path))
         processed += 1
 

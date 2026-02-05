@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import logging
+from urllib.parse import quote
 
 import requests
 
@@ -74,7 +75,7 @@ def send_email(
             }
         }
 
-        url = f"https://graph.microsoft.com/v1.0/users/{email_from}/sendMail"
+        url = f"https://graph.microsoft.com/v1.0/users/{quote(email_from)}/sendMail"
         response = requests.post(
             url,
             json=payload,
@@ -82,6 +83,7 @@ def send_email(
             timeout=30,
         )
         response.raise_for_status()
+        logging.info("Email sent for %s", notification["filename"])
         return True
 
     except Exception:

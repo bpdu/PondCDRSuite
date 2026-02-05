@@ -15,11 +15,9 @@ def send_message(full_path: str, notification: dict[str, str], config: dict[str,
         if not chat_id:
             raise RuntimeError("TELEGRAM_CHAT_ID is not set")
 
-        url = f"https://api.telegram.org/bot{token}/sendDocument"
-
         with open(full_path, "rb") as f:
             r = requests.post(
-                url,
+                "https://api.telegram.org/bot%s/sendDocument" % token,
                 data={
                     "chat_id": chat_id,
                     "caption": notification["telegram_text"],
@@ -29,7 +27,10 @@ def send_message(full_path: str, notification: dict[str, str], config: dict[str,
                 timeout=30,
             )
 
-        r.raise_for_status()
+        if not r.ok:
+            raise RuntimeError(f"Telegram API returned {r.status_code}")
+
+        logging.info("Telegram message sent for %s", notification["filename"])
         return True
 
     except Exception:
