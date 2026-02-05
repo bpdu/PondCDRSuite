@@ -47,8 +47,8 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env with your Telegram/Email notification settings
 
-cp configs/telna.env.example configs/telna.env
-# Edit configs/telna.env with your SFTP credentials
+cp configs/client_example.env.example configs/provider_a.env
+# Edit configs/provider_a.env with your SFTP credentials
 
 # Make scripts executable
 chmod +x cdr_sync.sh send_alert.py
@@ -106,7 +106,7 @@ DELETE_MISSING=true      # Delete files missing from source (default: false)
 ./cdr_sync.sh <pull|push> <config_file>
 
 # Download files from remote server
-./cdr_sync.sh pull configs/telna.env
+./cdr_sync.sh pull configs/provider_a.env
 
 # Upload files to remote server
 ./cdr_sync.sh push configs/client_acme.env
@@ -127,9 +127,9 @@ Each line is a JSON object:
 ```json
 {
   "timestamp": "2026-02-05T16:30:00Z",
-  "config": "telna",
+  "config": "provider_a",
   "operation": "pull",
-  "host": "sftp.telna.com",
+  "host": "sftp.example.com",
   "status": "success",
   "message": "Sync completed",
   "error": "",
@@ -149,8 +149,8 @@ crontab -e
 Add entries:
 
 ```cron
-# Pull from Telna every hour at :00
-0 * * * * cd /home/cdr_admin/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull configs/telna.env >> /dev/null 2>&1
+# Pull from provider every hour at :00
+0 * * * * cd /home/cdr_admin/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull configs/provider_a.env >> /dev/null 2>&1
 
 # Push to client every hour at :10
 10 * * * * cd /home/cdr_admin/PondCDRSuite/cdr_sync && ./cdr_sync.sh push configs/client_acme.env >> /dev/null 2>&1
