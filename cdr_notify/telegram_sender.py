@@ -4,14 +4,9 @@ import logging
 
 import requests
 
-from . import utils
-
 
 def send_message(notification: dict[str, str], config: dict[str, str]) -> bool:
     try:
-        if not utils.is_enabled(config.get("TELEGRAM_SEND", "")):
-            return True
-
         token = config.get("TELEGRAM_BOT_TOKEN", "").strip()
         chat_id = config.get("TELEGRAM_CHAT_ID", "").strip()
 

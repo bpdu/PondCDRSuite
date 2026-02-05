@@ -22,6 +22,8 @@ def main() -> None:
 
     db_name = config.get("DB_NAME", "cdr_files.db").strip() or "cdr_files.db"
     database.init_db(db_name)
+    send_email = utils.is_enabled(config.get("EMAIL_SEND", ""))
+    send_telegram = utils.is_enabled(config.get("TELEGRAM_SEND", ""))
     logging.info("Starting CDR notify service")
 
     new_files = [f for f in utils.get_files(cdr_folder) if not utils.is_known_file(f)]
@@ -37,8 +39,11 @@ def main() -> None:
             continue
 
         notification = utils.build_notification(full_path)
-        email_sender.send_email(full_path, notification, config)
-        telegram_sender.send_message(notification, config)
+
+        if send_email:
+            email_sender.send_email(full_path, notification, config)
+        if send_telegram:
+            telegram_sender.send_message(notification, config)
 
         utils.insert_file_record(full_path, file_hash, utils.FileStatus.SENT)
         logging.info("File processed successfully: %s", utils.get_filename(full_path))

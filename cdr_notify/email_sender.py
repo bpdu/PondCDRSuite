@@ -11,9 +11,6 @@ def send_email(
     full_path: str, notification: dict[str, str], config: dict[str, str]
 ) -> bool:
     try:
-        if not utils.is_enabled(config.get("EMAIL_SEND", "")):
-            return True
-
         smtp_host = config.get("SMTP_HOST", "").strip()
         smtp_port = int(config.get("SMTP_PORT", "587").strip() or "587")
         email_from = config.get("EMAIL_FROM", "").strip()
