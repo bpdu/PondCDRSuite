@@ -125,9 +125,8 @@ def calculate_hash(filepath: str) -> str | None:
         return None
 
 
-def is_known_file(full_path: str) -> bool:
-    filename = get_filename(full_path)
-    return database.get_file_by_filename(filename) is not None
+def is_known_hash(file_hash: str) -> bool:
+    return database.get_file_by_hash(file_hash) is not None
 
 
 def insert_file_record(full_path: str, file_hash: str, status: FileStatus) -> bool:

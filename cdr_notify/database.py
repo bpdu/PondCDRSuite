@@ -15,8 +15,8 @@ def init_db(db_path: str = "cdr_files.db") -> None:
                 """
                 CREATE TABLE IF NOT EXISTS cdr_files (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    filename TEXT UNIQUE NOT NULL,
-                    file_hash TEXT NOT NULL,
+                    filename TEXT NOT NULL,
+                    file_hash TEXT UNIQUE NOT NULL,
                     status TEXT NOT NULL,
                     changed TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
@@ -32,14 +32,14 @@ def _get_conn() -> sqlite3.Connection:
     return _conn
 
 
-def get_file_by_filename(filename: str) -> tuple | None:
+def get_file_by_hash(file_hash: str) -> tuple | None:
     try:
         cur = _get_conn().execute(
-            "SELECT * FROM cdr_files WHERE filename = ?", (filename,)
+            "SELECT * FROM cdr_files WHERE file_hash = ?", (file_hash,)
         )
         return cur.fetchone()
     except Exception:
-        logging.exception("Database read error for filename %s", filename)
+        logging.exception("Database read error for hash %s", file_hash)
         return None
 
 

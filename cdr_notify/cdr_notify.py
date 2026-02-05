@@ -26,16 +26,14 @@ def main() -> None:
     send_telegram = utils.is_enabled(config.get("TELEGRAM_SEND", ""))
     logging.info("Starting CDR notify service")
 
-    new_files = [f for f in utils.get_files(cdr_folder) if not utils.is_known_file(f)]
-
-    if not new_files:
-        logging.info("No new CDR files found")
-        return
-
-    for full_path in new_files:
+    processed = 0
+    for full_path in utils.get_files(cdr_folder):
         file_hash = utils.calculate_hash(full_path)
         if not file_hash:
             logging.error("Failed to calculate hash for %s", full_path)
+            continue
+
+        if utils.is_known_hash(file_hash):
             continue
 
         notification = utils.build_notification(full_path)
@@ -47,6 +45,10 @@ def main() -> None:
 
         utils.insert_file_record(full_path, file_hash, utils.FileStatus.SENT)
         logging.info("File processed successfully: %s", utils.get_filename(full_path))
+        processed += 1
+
+    if not processed:
+        logging.info("No new CDR files found")
 
 
 if __name__ == "__main__":
