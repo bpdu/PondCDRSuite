@@ -72,9 +72,9 @@ def build_notification(full_path: str) -> dict[str, str]:
 
     changed = ""
     try:
-        changed = datetime.datetime.fromtimestamp(
+        changed = datetime.datetime.utcfromtimestamp(
             os.path.getmtime(full_path)
-        ).strftime("%Y-%m-%d %H:%M:%S")
+        ).strftime("%Y-%m-%d %H:%M:%S GMT")
     except Exception:
         logging.exception("Failed to get mtime for %s", full_path)
 

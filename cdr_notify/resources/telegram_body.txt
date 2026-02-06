@@ -5,8 +5,6 @@ A new <b>Plintron Fraud report</b> has arrived on the Pond server. You are subsc
 <b>File</b>: {filename}
 <b>Created at</b>: {changed}
 
-This notification was generated automatically by the Pond cdr_notify service. Please do not reply.
-
-Best regards,
+This notification was generated automatically by the Pond <b>cdr_notify</b> service. Please do not reply.
 
 <b>PondCDRSuite Team</b>

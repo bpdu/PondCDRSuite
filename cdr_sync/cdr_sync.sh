@@ -151,6 +151,7 @@ set net:max-retries 5
 set net:reconnect-interval-base 5
 set net:reconnect-interval-multiplier 1.5
 set cmd:fail-exit true
+set xfer:time true
 set mirror:parallel-transfer-count ${PARALLEL_TRANSFERS}
 set mirror:use-pget-n 2
 set ssl:verify-certificate no
@@ -190,6 +191,16 @@ extract_lftp_error() {
     else
         echo "No lftp log available"
     fi
+}
+
+extract_transferred_files() {
+    # Extract list of transferred files from lftp log
+    if [[ ! -f "${LFTP_LOG_FILE}" ]]; then
+        return
+    fi
+
+    # lftp verbose format: "get: filename (size)" or "put: filename (size)"
+    grep -E "^(get|put):" "${LFTP_LOG_FILE}" | sed -E 's/^(get|put): //; s/ \(.*\)$//' | sort
 }
 
 main() {
@@ -251,6 +262,18 @@ main() {
     case ${rc} in
         0)
             log_text "INFO" "Sync completed successfully in ${duration}s"
+            local transferred_files
+            transferred_files=$(extract_transferred_files)
+            if [[ -n "${transferred_files}" ]]; then
+                local transferred_count
+                transferred_count=$(echo "${transferred_files}" | wc -l)
+                log_text "INFO" "Transferred ${transferred_count} file(s):"
+                while IFS= read -r file; do
+                    [[ -n "${file}" ]] && log_text "INFO" "  - ${file}"
+                done <<< "${transferred_files}"
+            else
+                log_text "INFO" "No new files transferred"
+            fi
             log_json "success" "Sync completed" "" "${duration}" "${files_count}"
             ;;
         124)
