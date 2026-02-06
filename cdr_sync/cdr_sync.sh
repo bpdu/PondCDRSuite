@@ -151,7 +151,6 @@ set net:max-retries 5
 set net:reconnect-interval-base 5
 set net:reconnect-interval-multiplier 1.5
 set cmd:fail-exit true
-set xfer:time true
 set mirror:parallel-transfer-count ${PARALLEL_TRANSFERS}
 set mirror:use-pget-n 2
 set ssl:verify-certificate no
