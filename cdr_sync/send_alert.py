@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-# send_alert.py - Send alerts via Telegram and/or Email
+# send_alert.py - Send alerts via Telegram and/or Email (Microsoft Graph API)
 
 from __future__ import annotations
 
 import argparse
 import logging
 import os
-import smtplib
 import sys
-from email.message import EmailMessage
+from urllib.parse import quote
 
 import requests
 from dotenv import load_dotenv
@@ -43,32 +42,60 @@ def send_telegram(subject: str, message: str, token: str, chat_id: str) -> bool:
         return False
 
 
+def _get_access_token(tenant_id: str, client_id: str, client_secret: str) -> str:
+    url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+    response = requests.post(
+        url,
+        data={
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "scope": "https://graph.microsoft.com/.default",
+            "grant_type": "client_credentials",
+        },
+        timeout=30,
+    )
+    response.raise_for_status()
+    return response.json()["access_token"]
+
+
 def send_email(
     subject: str,
     message: str,
-    smtp_host: str,
-    smtp_port: int,
-    smtp_user: str,
-    smtp_password: str,
-    smtp_from: str,
-    smtp_to: str,
+    tenant_id: str,
+    client_id: str,
+    client_secret: str,
+    email_from: str,
+    email_to: str,
 ) -> bool:
     try:
-        msg = EmailMessage()
-        msg["Subject"] = subject
-        msg["From"] = smtp_from
-        msg["To"] = smtp_to
-        msg.set_content(message)
+        access_token = _get_access_token(tenant_id, client_id, client_secret)
 
-        with smtplib.SMTP(smtp_host, smtp_port) as server:
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
-            if smtp_user and smtp_password:
-                server.login(smtp_user, smtp_password)
-            server.send_message(msg)
+        recipients = [
+            {"emailAddress": {"address": addr.strip()}}
+            for addr in email_to.split(",")
+            if addr.strip()
+        ]
 
-        logging.info("Email alert sent to %s", smtp_to)
+        payload = {
+            "message": {
+                "subject": subject,
+                "body": {
+                    "contentType": "Text",
+                    "content": message,
+                },
+                "toRecipients": recipients,
+            }
+        }
+
+        url = f"https://graph.microsoft.com/v1.0/users/{quote(email_from)}/sendMail"
+        response = requests.post(
+            url,
+            json=payload,
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=30,
+        )
+        response.raise_for_status()
+        logging.info("Email alert sent to %s", email_to)
         return True
     except Exception:
         logging.exception("Failed to send email alert")
@@ -104,26 +131,27 @@ def main() -> int:
                 success = False
 
     if is_true(args.email):
-        smtp_host = os.getenv("SMTP_HOST", "").strip()
-        smtp_port = int(os.getenv("SMTP_PORT", "587").strip() or "587")
-        smtp_user = os.getenv("SMTP_USER", "").strip()
-        smtp_password = os.getenv("SMTP_PASSWORD", "").strip()
-        smtp_from = os.getenv("SMTP_FROM", "").strip()
-        smtp_to = os.getenv("SMTP_TO", "").strip()
+        tenant_id = os.getenv("MS_TENANT_ID", "").strip()
+        client_id = os.getenv("MS_CLIENT_ID", "").strip()
+        client_secret = os.getenv("MS_CLIENT_SECRET", "").strip()
+        email_from = os.getenv("EMAIL_FROM", "").strip()
+        email_to = os.getenv("EMAIL_TO", "").strip()
 
-        if not smtp_host or not smtp_from or not smtp_to:
-            logging.error("SMTP_HOST, SMTP_FROM, or SMTP_TO not set in .env")
+        if not tenant_id or not client_id or not client_secret:
+            logging.error("MS_TENANT_ID, MS_CLIENT_ID, or MS_CLIENT_SECRET not set in .env")
+            success = False
+        elif not email_from or not email_to:
+            logging.error("EMAIL_FROM or EMAIL_TO not set in .env")
             success = False
         else:
             if not send_email(
                 args.subject,
                 args.message,
-                smtp_host,
-                smtp_port,
-                smtp_user,
-                smtp_password,
-                smtp_from,
-                smtp_to,
+                tenant_id,
+                client_id,
+                client_secret,
+                email_from,
+                email_to,
             ):
                 success = False
 
