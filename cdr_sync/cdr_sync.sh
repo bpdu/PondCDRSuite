@@ -142,7 +142,8 @@ run_sync() {
     # Create temporary lftp script
     local lftp_script
     lftp_script=$(mktemp)
-    trap 'rm -f "${lftp_script}"' EXIT
+    cleanup() { rm -f "${lftp_script:-}"; }
+    trap cleanup RETURN
 
     cat > "${lftp_script}" << EOF
 set net:timeout 30
