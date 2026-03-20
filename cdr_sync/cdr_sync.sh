@@ -233,14 +233,13 @@ main() {
     JSON_LOG_FILE="${LOGS_DIR}/${CONFIG_NAME}_${date_suffix}.json"
     LFTP_LOG_FILE="${LOGS_DIR}/${CONFIG_NAME}_lftp_${date_suffix}.log"
 
-    # Load global .env (for notification settings)
-    if [[ -f "${SCRIPT_DIR}/.env" ]]; then
-        load_env_file "${SCRIPT_DIR}/.env"
-    fi
-
     # Load operation config
     load_env_file "${config_file}"
     validate_config
+
+    # Set defaults for notification settings (can be overridden in client config)
+    SEND_TELEGRAM="${SEND_TELEGRAM:-false}"
+    SEND_EMAIL="${SEND_EMAIL:-false}"
 
     # Record start time
     START_TIME=$(date +%s)
