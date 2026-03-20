@@ -154,7 +154,7 @@ Add entries to user crontab or `/etc/cron.d/cdr_sync`:
 */15 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull configs/client_a.env >> /dev/null 2>&1
 30 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull configs/client_b.env >> /dev/null 2>&1
 0 */4 * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh push configs/client_c.env >> /dev/null 2>&1
-0 0 * * 6,0 cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh push configs/client_c.env >> /dev/null 2>&1
+0 0 * * 6,0 cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh push configs/client_d.env >> /dev/null 2>&1
 ```
 
 ## Log Rotation
