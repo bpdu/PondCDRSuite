@@ -85,7 +85,7 @@ SFTP_USER=username
 SFTP_PASSWORD=password
 
 # Directories
-REMOTE_DIR=/data/cdr
+REMOTE_DIR=/path/to/remote/cdr/storage
 LOCAL_DIR=/path/to/local/cdr/storage
 
 # Sync settings
