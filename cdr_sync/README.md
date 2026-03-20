@@ -85,8 +85,8 @@ SFTP_USER=username
 SFTP_PASSWORD=password
 
 # Directories
-REMOTE_DIR=/path/to/remote/cdr/storage
-LOCAL_DIR=/path/to/local/cdr/storage
+REMOTE_DIR=/path/to/remote/cdr/directory
+LOCAL_DIR=/path/to/local/cdr/directory
 
 # Sync settings
 TIMEOUT=300              # Operation timeout in seconds (default: 300)
