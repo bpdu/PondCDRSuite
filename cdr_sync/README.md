@@ -36,7 +36,7 @@ sudo apt-get install lftp python3 python3-pip
 ## Installation
 
 ```bash
-cd /home/cdr_admin/PondCDRSuite/cdr_sync
+cd /path/to/PondCDRSuite/cdr_sync
 
 # Create Python virtual environment
 python3 -m venv venv
@@ -86,7 +86,7 @@ SFTP_PASSWORD=password
 
 # Directories
 REMOTE_DIR=/data/cdr
-LOCAL_DIR=/home/cdr_admin/CDRs/example
+LOCAL_DIR=/path/to/local/cdr/storage
 
 # Sync settings
 TIMEOUT=300              # Operation timeout in seconds (default: 300)
@@ -149,14 +149,14 @@ Add entries:
 
 ```cron
 # Pull from provider every hour at :00
-0 * * * * cd /home/cdr_admin/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull configs/provider_a.env >> /dev/null 2>&1
+0 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull configs/provider_a.env >> /dev/null 2>&1
 
 # Push to client every hour at :10
-10 * * * * cd /home/cdr_admin/PondCDRSuite/cdr_sync && ./cdr_sync.sh push configs/client_acme.env >> /dev/null 2>&1
+10 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh push configs/client_acme.env >> /dev/null 2>&1
 
 # Multiple pulls with different schedules
-*/15 * * * * cd /home/cdr_admin/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull configs/provider_a.env >> /dev/null 2>&1
-30 * * * * cd /home/cdr_admin/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull configs/provider_b.env >> /dev/null 2>&1
+*/15 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull configs/provider_a.env >> /dev/null 2>&1
+30 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull configs/provider_b.env >> /dev/null 2>&1
 ```
 
 ## Log Rotation
@@ -164,6 +164,9 @@ Add entries:
 Install logrotate configuration:
 
 ```bash
+# Edit logrotate.conf and replace /path/to with your installation directory
+# Replace username:groupname with your user:group
+
 sudo cp logrotate.conf /etc/logrotate.d/cdr_sync
 
 # Test configuration
