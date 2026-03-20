@@ -141,11 +141,7 @@ Status values: `success`, `failed`, `timeout`
 
 ## Cron Setup
 
-```bash
-crontab -e
-```
-
-Add entries:
+Add entries to user crontab or `/etc/cron.d/cdr_sync`:
 
 ```cron
 # Pull from provider every hour at :00
