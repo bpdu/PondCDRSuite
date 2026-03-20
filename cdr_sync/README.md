@@ -144,11 +144,11 @@ Status values: `success`, `failed`, `timeout`
 Add entries to user crontab or `/etc/cron.d/cdr_sync`:
 
 ```cron
-# Pull from provider every hour at :00
+# Pull from client_a every hour at :00
 0 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull configs/client_a.env >> /dev/null 2>&1
 
-# Push to client every hour at :10
-10 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh push configs/client_c.env >> /dev/null 2>&1
+# Push to client_b every hour at :10
+10 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh push configs/client_b.env >> /dev/null 2>&1
 
 # Multiple pulls with different schedules
 */15 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull configs/client_a.env >> /dev/null 2>&1
