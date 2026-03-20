@@ -58,23 +58,19 @@ chmod +x cdr_sync.sh send_alert.py
 
 ### Global settings (.env)
 
-Notification settings for alerts:
+Credentials for notification channels (shared across all clients):
 
 ```bash
 # Telegram notifications
-TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
-TELEGRAM_CHAT_ID=-1001234567890
+TELEGRAM_BOT_TOKEN=BOT_TOKEN
+TELEGRAM_CHAT_ID=-CHAT_ID
 
-# Email notifications (Microsoft Graph API)
+# Email notifications
 MS_TENANT_ID=your_tenant_id
 MS_CLIENT_ID=your_client_id
 MS_CLIENT_SECRET=your_client_secret
-EMAIL_FROM=cdr-notify@yourcompany.com
+EMAIL_FROM=notify@yourcompany.com
 EMAIL_TO=admin@yourcompany.com
-
-# Enable/disable alert channels
-SEND_TELEGRAM=true
-SEND_EMAIL=true
 ```
 
 ### Operation config (configs/*.env)
@@ -93,9 +89,13 @@ REMOTE_DIR=/data/cdr
 LOCAL_DIR=/home/cdr_admin/CDRs/example
 
 # Sync settings
-TIMEOUT=600              # Operation timeout in seconds (default: 600)
-PARALLEL_TRANSFERS=4     # Number of parallel file transfers (default: 2)
-DELETE_MISSING=true      # Delete files missing from source (default: false)
+TIMEOUT=300              # Operation timeout in seconds (default: 300)
+PARALLEL_TRANSFERS=2     # Number of parallel file transfers (default: 2)
+DELETE_MISSING=false     # Delete files missing from source (default: false)
+
+# Notification settings (per-client)
+SEND_TELEGRAM=false      # Enable Telegram alerts for this client
+SEND_EMAIL=false         # Enable email alerts for this client
 ```
 
 ## Usage
@@ -213,7 +213,7 @@ Error: Permission denied
 ### Timeout errors
 
 ```
-Error: Operation timed out after 600s
+Error: Operation timed out after 300s
 ```
 
 - Increase TIMEOUT value in config

@@ -104,7 +104,7 @@ validate_config() {
 
     # Set defaults
     SFTP_PORT="${SFTP_PORT:-22}"
-    TIMEOUT="${TIMEOUT:-600}"
+    TIMEOUT="${TIMEOUT:-300}"
     PARALLEL_TRANSFERS="${PARALLEL_TRANSFERS:-2}"
     DELETE_MISSING="${DELETE_MISSING:-false}"
 }
