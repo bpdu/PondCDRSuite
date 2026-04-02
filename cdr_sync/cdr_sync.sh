@@ -154,7 +154,6 @@ set cmd:fail-exit true
 set mirror:parallel-transfer-count ${PARALLEL_TRANSFERS}
 set mirror:use-pget-n 2
 set ssl:verify-certificate no
-set log:show-time true
 
 open -u "${SFTP_USER}","${SFTP_PASSWORD}" -p ${SFTP_PORT} sftp://${SFTP_HOST}
 
@@ -175,7 +174,8 @@ EOF
 
     # Only write lftp log if there's actual output
     if [[ -n "${lftp_output}" ]]; then
-        echo "${lftp_output}" > "${LFTP_LOG_FILE}"
+        # Add timestamp to each line
+        echo "${lftp_output}" | awk '{now=strftime("%Y-%m-%d %H:%M:%S"); print now " " $0}' > "${LFTP_LOG_FILE}"
     fi
 
     return ${rc}
