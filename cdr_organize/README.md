@@ -1,0 +1,100 @@
+# cdr_organize
+
+Console utility for organizing incoming CSV files into client folders.
+
+## Project Structure
+
+```
+cdr_organize/
+├── cdr_organize.py         # Main utility
+├── cdr_organize.logrotate  # Logrotate configuration
+├── cdr_organize.cron       # Cron jobs example
+└── README.md               # This file
+```
+
+## Installation
+
+1. Copy utility to server:
+```bash
+mkdir -p /home/cdr_admin/PondCDRSuite/cdr_organize
+cp cdr_organize.py /home/cdr_admin/PondCDRSuite/cdr_organize/
+chmod +x /home/cdr_admin/PondCDRSuite/cdr_organize/cdr_organize.py
+```
+
+2. Setup logrotate:
+```bash
+sudo cp cdr_organize.logrotate /etc/logrotate.d/cdr_organize
+```
+
+3. Setup cron (optional):
+```bash
+sudo cp cdr_organize.cron /etc/cron.d/cdr_organize
+```
+
+## Usage
+
+Manual run:
+```bash
+python3 cdr_organize.py <SOURCE_DIR> <DEST_DIR>
+```
+
+Examples:
+```bash
+python3 cdr_organize.py /home/cdr_admin/CDRs/inbound/telna_cdr /srv/cdr-office
+python3 cdr_organize.py /home/cdr_admin/CDRs/inbound/telna_lu /srv/cdr-office
+```
+
+## Result Structure
+
+```
+DEST_DIR/
+├── cdr/
+│   ├── China Unicom/
+│   │   └── LIVE_China Unicom_CDR_20251218120000_1_20251218130941.csv
+│   └── Acronis/
+│       └── LIVE_Acronis_CDR_20251218120000_1_20251218130941.csv
+└── lu/
+    ├── China Unicom/
+    │   └── LIVE_China Unicom_LU_20251218120000_1_20251218130941.csv
+    └── Acronis/
+        └── LIVE_Acronis_LU_20251218120000_1_20251218130941.csv
+```
+
+## Verification
+
+Check the log:
+```bash
+tail -f /var/log/cdr_process.log
+```
+
+Check destination:
+```bash
+ls -la /srv/cdr-office/cdr/
+ls -la /srv/cdr-office/lu/
+```
+
+Test run (dry run - just check what would be processed):
+```bash
+ls /home/cdr_admin/CDRs/inbound/telna_cdr/*.csv | head -5
+```
+
+## Log Format
+
+```
+2026-04-06 18:00:00 - COPIED LIVE_Client_CDR_20250101120000_1_20250101130000.csv
+2026-04-06 18:00:01 - SKIPPED LIVE_Client_CDR_20250101110000_1_20250101120000.csv
+2026-04-06 18:00:02 - OVERWRITTEN LIVE_Client_CDR_20250101100000_1_20250101110000.csv
+2026-04-06 18:00:03 - ERROR LIVE_Client_CDR_20250101090000_1_20250101100000.csv: Permission denied
+2026-04-06 18:00:04 - RUN SUMMARY: copied=15 skipped=5 overwritten=2 errors=1
+```
+
+## File Processing Rules
+
+1. Only `.csv` files from SOURCE_DIR root (no recursion)
+2. Type detection: `_CDR_` → cdr, `_LU_` → lu
+3. Client name extracted from `LIVE_<CLIENT>_<TYPE>_...` pattern
+4. Target directories created automatically
+5. Existing files with same size are skipped
+6. Existing files with different size are overwritten
+7. Atomic copy via temporary file
+8. Errors on individual files don't stop processing
