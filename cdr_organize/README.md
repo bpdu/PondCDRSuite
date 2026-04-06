@@ -16,19 +16,19 @@ cdr_organize/
 
 1. Copy utility to server:
 ```bash
-mkdir -p /home/cdr_admin/PondCDRSuite/cdr_organize
-cp cdr_organize.py /home/cdr_admin/PondCDRSuite/cdr_organize/
-chmod +x /home/cdr_admin/PondCDRSuite/cdr_organize/cdr_organize.py
+mkdir -p {PROJECT_DIR}/cdr_organize
+cp cdr_organize.py {PROJECT_DIR}/cdr_organize/
+chmod +x {PROJECT_DIR}/cdr_organize/cdr_organize.py
 ```
 
 2. Setup logrotate:
 ```bash
-sudo cp cdr_organize.logrotate /etc/logrotate.d/cdr_organize
+sudo cp cdr_organize.logrotate {LOGROTATE_DIR}/cdr_organize
 ```
 
 3. Setup cron (optional):
 ```bash
-sudo cp cdr_organize.cron /etc/cron.d/cdr_organize
+sudo cp cdr_organize.cron {CRON_DIR}/cdr_organize
 ```
 
 ## Usage
@@ -40,26 +40,25 @@ python3 cdr_organize.py <SOURCE_DIR> <DEST_DIR>
 
 Examples:
 ```bash
-python3 cdr_organize.py /home/cdr_admin/CDRs/inbound/company_cdr /srv/cdr-office
-python3 cdr_organize.py /home/cdr_admin/CDRs/inbound/company_lu /srv/cdr-office
+python3 cdr_organize.py {SOURCE_DIR} {DEST_DIR}
 ```
 
 ## Verification
 
 Check the log:
 ```bash
-tail -f /var/log/cdr_process.log
+tail -f {LOG_FILE}
 ```
 
 Check destination:
 ```bash
-ls -la /srv/cdr-office/cdr/
-ls -la /srv/cdr-office/lu/
+ls -la {DEST_DIR}/cdr/
+ls -la {DEST_DIR}/lu/
 ```
 
 Test run (dry run - just check what would be processed):
 ```bash
-ls /home/cdr_admin/CDRs/inbound/company_cdr/*.csv | head -5
+ls {SOURCE_DIR}/*.csv | head -5
 ```
 
 ## File Processing Rules
