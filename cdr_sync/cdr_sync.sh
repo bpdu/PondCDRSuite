@@ -145,7 +145,7 @@ run_sync() {
     cleanup() { rm -f "${lftp_script:-}"; }
     trap cleanup RETURN
 
-    cat > "${lftp_script}" << EOF
+    cat > "${lftp_script}" << \EOF
 set net:timeout 30
 set net:max-retries 5
 set net:reconnect-interval-base 5
@@ -175,7 +175,7 @@ EOF
     # Only write lftp log if there's actual output
     if [[ -n "${lftp_output}" ]; then
         # Add timestamp to each line (strftime called per line)
-        echo "${lftp_output}" | awk '{print strftime("%Y-%m-%d %H:%M:%S") " " $0}' > "${LFTP_LOG_FILE}"
+        echo "${lftp_output}" | awk '{print strftime("%Y-%m-%d %H:%M:%S") " " $0}' >> "${LFTP_LOG_FILE}"
     fi
 
     return ${rc}
@@ -205,8 +205,28 @@ extract_transferred_files() {
         return
     fi
 
-    # lftp verbose format: "get: filename (size)" or "put: filename (size)"
-    grep -E "^(get|put):" "${LFTP_LOG_FILE}" | sed -E 's/^(get|put): //; s/ \(.*\)$//' | sort
+    # lftp verbose format: "Transferring file `filename'"
+    grep "Transferring file" "${LFTP_LOG_FILE}" | sed -E "s/^.*Transferring file \`(.*)'\$/\1/" | sort
+}
+
+count_transferred_files() {
+    # Count transferred files from current run only
+    if [[ ! -f "${LFTP_LOG_FILE}" ]]; then
+        echo "0"
+        return
+    fi
+
+    # Count only files from this run (after START_TIME)
+    local start_timestamp
+    start_timestamp="$(date -d "@${START_TIME}" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo '')"
+
+    if [[ -n "${start_timestamp}" ]]; then
+        # Count lines with timestamp >= start_timestamp
+        awk -v start="${start_timestamp}" '$1 " " $2 " " $3 >= start && /Transferring file/ {count++} END {print count+0}' "${LFTP_LOG_FILE}"
+    else
+        # Fallback: count all Transferring file lines
+        grep -c "Transferring file" "${LFTP_LOG_FILE}" 2>/dev/null || echo "0"
+    fi
 }
 
 main() {
@@ -267,19 +287,21 @@ main() {
     case ${rc} in
         0)
             log_text "INFO" "Sync completed successfully in ${duration}s"
-            local transferred_files
-            transferred_files=$(extract_transferred_files)
-            if [[ -n "${transferred_files}" ]]; then
-                local transferred_count
-                transferred_count=$(echo "${transferred_files}" | wc -l)
-                log_text "INFO" "Transferred ${transferred_count} file(s):"
-                while IFS= read -r file; do
-                    [[ -n "${file}" ]] && log_text "INFO" "  - ${file}"
-                done <<< "${transferred_files}"
+            local transferred_count
+            transferred_count=$(count_transferred_files)
+            if [[ "${transferred_count}" -gt 0 ]]; then
+                log_text "INFO" "Files transferred: ${transferred_count}"
+                local transferred_files
+                transferred_files=$(extract_transferred_files)
+                if [[ -n "${transferred_files}" ]]; then
+                    while IFS= read -r file; do
+                        [[ -n "${file}" ]] && log_text "INFO" "  - ${file}"
+                    done <<< "${transferred_files}"
+                fi
             else
                 log_text "INFO" "No new files transferred"
             fi
-            log_json "success" "Sync completed" "" "${duration}" "${files_count}"
+            log_json "success" "Sync completed" "" "${duration}" "${transferred_count}"
             ;;
         124)
             local error_msg="Operation timed out after ${TIMEOUT}s"
