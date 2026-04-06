@@ -44,22 +44,6 @@ python3 cdr_organize.py /home/cdr_admin/CDRs/inbound/telna_cdr /srv/cdr-office
 python3 cdr_organize.py /home/cdr_admin/CDRs/inbound/telna_lu /srv/cdr-office
 ```
 
-## Result Structure
-
-```
-DEST_DIR/
-├── cdr/
-│   ├── China Unicom/
-│   │   └── LIVE_China Unicom_CDR_20251218120000_1_20251218130941.csv
-│   └── Acronis/
-│       └── LIVE_Acronis_CDR_20251218120000_1_20251218130941.csv
-└── lu/
-    ├── China Unicom/
-    │   └── LIVE_China Unicom_LU_20251218120000_1_20251218130941.csv
-    └── Acronis/
-        └── LIVE_Acronis_LU_20251218120000_1_20251218130941.csv
-```
-
 ## Verification
 
 Check the log:
