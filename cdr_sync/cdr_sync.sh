@@ -145,7 +145,7 @@ run_sync() {
     cleanup() { rm -f "${lftp_script:-}"; }
     trap cleanup RETURN
 
-    cat > "${lftp_script}" << \EOF
+    cat > "${lftp_script}" << EOF
 set net:timeout 30
 set net:max-retries 5
 set net:reconnect-interval-base 5
