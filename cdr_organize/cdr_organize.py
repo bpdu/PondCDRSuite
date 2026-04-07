@@ -8,20 +8,35 @@ from datetime import datetime
 from typing import Tuple, Optional
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_FILE = os.path.join(SCRIPT_DIR, "logs", "cdr_process.log")
+LOG_DIR = os.path.join(SCRIPT_DIR, "logs")
+CDR_LOG_FILE = os.path.join(LOG_DIR, "cdr_process.log")
+LU_LOG_FILE = os.path.join(LOG_DIR, "lu_process.log")
 
 
-def setup_logging():
-    log_dir = os.path.dirname(LOG_FILE)
-    os.makedirs(log_dir, exist_ok=True)
+def setup_loggers():
+    os.makedirs(LOG_DIR, exist_ok=True)
 
-    logging.basicConfig(
-        filename=LOG_FILE,
-        level=logging.INFO,
-        format='%(asctime)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
-    )
-    return logging.getLogger(__name__)
+    cdr_logger = logging.getLogger('cdr')
+    cdr_logger.setLevel(logging.INFO)
+    cdr_handler = logging.FileHandler(CDR_LOG_FILE)
+    cdr_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s', '%Y-%m-%d %H:%M:%S'))
+    cdr_logger.addHandler(cdr_handler)
+
+    lu_logger = logging.getLogger('lu')
+    lu_logger.setLevel(logging.INFO)
+    lu_handler = logging.FileHandler(LU_LOG_FILE)
+    lu_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s', '%Y-%m-%d %H:%M:%S'))
+    lu_logger.addHandler(lu_handler)
+
+    return cdr_logger, lu_logger
+
+
+def get_logger(file_type: str, cdr_logger, lu_logger):
+    if file_type == "cdr":
+        return cdr_logger
+    elif file_type == "lu":
+        return lu_logger
+    return None
 
 
 def get_file_type(filename: str) -> Optional[str]:
@@ -81,12 +96,13 @@ def copy_atomically(source_path: str, dest_path: str) -> bool:
         raise e
 
 
-def process_file(source_path: str, dest_dir: str, filename: str, logger) -> Tuple[str, int]:
+def process_file(source_path: str, dest_dir: str, filename: str, cdr_logger, lu_logger) -> Tuple[str, int]:
     file_type, client = parse_filename(filename)
 
     if not file_type or not client:
         return "ignored", 0
 
+    logger = get_logger(file_type, cdr_logger, lu_logger)
     dest_path = build_dest_path(dest_dir, file_type, client, filename)
     dest_dir_full = os.path.dirname(dest_path)
 
@@ -97,6 +113,7 @@ def process_file(source_path: str, dest_dir: str, filename: str, logger) -> Tupl
         return "error", 1
 
     if not should_copy(source_path, dest_path):
+        logger.info(f"SKIPPED {filename}")
         return "skipped", 0
 
     try:
@@ -104,15 +121,17 @@ def process_file(source_path: str, dest_dir: str, filename: str, logger) -> Tupl
         copy_atomically(source_path, dest_path)
 
         if dest_exists:
+            logger.info(f"OVERWRITTEN {filename}")
             return "overwritten", 0
         else:
+            logger.info(f"COPIED {filename}")
             return "copied", 0
     except Exception as e:
         logger.error(f"ERROR {filename}: {e}")
         return "error", 1
 
 
-def scan_directory(source_dir: str, dest_dir: str, logger) -> Tuple[int, int, int, int]:
+def scan_directory(source_dir: str, dest_dir: str, cdr_logger, lu_logger) -> Tuple[int, int, int, int]:
     copied = 0
     skipped = 0
     overwritten = 0
@@ -124,7 +143,7 @@ def scan_directory(source_dir: str, dest_dir: str, logger) -> Tuple[int, int, in
                 continue
 
             source_path = os.path.join(root, filename)
-            status, err = process_file(source_path, dest_dir, filename, logger)
+            status, err = process_file(source_path, dest_dir, filename, cdr_logger, lu_logger)
 
             if status == "copied":
                 copied += 1
@@ -160,8 +179,9 @@ def validate_args(source_dir: str, dest_dir: str) -> Tuple[bool, Optional[str]]:
     return True, None
 
 
-def log_summary(copied: int, skipped: int, overwritten: int, errors: int, logger):
-    logger.info(f"RUN SUMMARY: copied={copied} skipped={skipped} overwritten={overwritten} errors={errors}")
+def log_summary(copied: int, skipped: int, overwritten: int, errors: int, cdr_logger, lu_logger):
+    cdr_logger.info(f"RUN SUMMARY: copied={copied} skipped={skipped} overwritten={overwritten} errors={errors}")
+    lu_logger.info(f"RUN SUMMARY: copied={copied} skipped={skipped} overwritten={overwritten} errors={errors}")
 
 
 def main():
@@ -177,11 +197,11 @@ def main():
         print(f"Error: {error}", file=sys.stderr)
         sys.exit(1)
 
-    logger = setup_logging()
+    cdr_logger, lu_logger = setup_loggers()
 
-    copied, skipped, overwritten, errors = scan_directory(source_dir, dest_dir, logger)
+    copied, skipped, overwritten, errors = scan_directory(source_dir, dest_dir, cdr_logger, lu_logger)
 
-    log_summary(copied, skipped, overwritten, errors, logger)
+    log_summary(copied, skipped, overwritten, errors, cdr_logger, lu_logger)
 
     if errors > 0:
         sys.exit(1)

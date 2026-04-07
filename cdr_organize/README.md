@@ -2,6 +2,21 @@
 
 Console utility for organizing incoming CSV files into client folders.
 
+## Directory Structure
+
+```
+/home/cdr_admin/CDRs/
+├── inbound/              # Source files from SFTP downloads
+│   ├── telna_cdr/
+│   ├── telna_lu/
+│   └── pintron_fraud/
+└── outbound/             # Processed files organized by client
+    ├── cdr/
+    │   └── <client>/
+    └── lu/
+        └── <client>/
+```
+
 ## Project Structure
 
 ```
@@ -42,7 +57,8 @@ python3 cdr_organize.py <SOURCE_DIR> <DEST_DIR>
 
 Examples:
 ```bash
-python3 cdr_organize.py {SOURCE_DIR} {DEST_DIR}
+python3 cdr_organize.py /home/cdr_admin/CDRs/inbound/telna_cdr /home/cdr_admin/CDRs/outbound
+python3 cdr_organize.py /home/cdr_admin/CDRs/inbound/telna_lu /home/cdr_admin/CDRs/outbound
 ```
 
 ## Verification
@@ -54,13 +70,13 @@ tail -f {PROJECT_DIR}/cdr_organize/logs/cdr_process.log
 
 Check destination:
 ```bash
-ls -la {DEST_DIR}/cdr/
-ls -la {DEST_DIR}/lu/
+ls -la /home/cdr_admin/CDRs/outbound/cdr/
+ls -la /home/cdr_admin/CDRs/outbound/lu/
 ```
 
 Test run (dry run - just check what would be processed):
 ```bash
-ls {SOURCE_DIR}/*.csv | head -5
+ls /home/cdr_admin/CDRs/inbound/telna_cdr/*.csv | head -5
 ```
 
 ## File Processing Rules

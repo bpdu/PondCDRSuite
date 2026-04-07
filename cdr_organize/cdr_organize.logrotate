@@ -1,4 +1,5 @@
-{PROJECT_DIR}/cdr_organize/logs/cdr_process.log {
+{PROJECT_DIR}/cdr_organize/logs/cdr_process.log
+{PROJECT_DIR}/cdr_organize/logs/lu_process.log {
     daily
     rotate 7
     compress
