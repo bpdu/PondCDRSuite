@@ -9,6 +9,8 @@ cdr_organize/
 ├── cdr_organize.py         # Main utility
 ├── cdr_organize.logrotate  # Logrotate configuration
 ├── cdr_organize.cron       # Cron jobs example
+├── logs/                   # Log directory
+│   └── cdr_process.log     # Log file
 └── README.md               # This file
 ```
 
@@ -47,7 +49,7 @@ python3 cdr_organize.py {SOURCE_DIR} {DEST_DIR}
 
 Check the log:
 ```bash
-tail -f {LOG_FILE}
+tail -f {PROJECT_DIR}/cdr_organize/logs/cdr_process.log
 ```
 
 Check destination:

@@ -7,10 +7,14 @@ from pathlib import Path
 from datetime import datetime
 from typing import Tuple, Optional
 
-LOG_FILE = "/var/log/cdr_process.log"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_FILE = os.path.join(SCRIPT_DIR, "logs", "cdr_process.log")
 
 
 def setup_logging():
+    log_dir = os.path.dirname(LOG_FILE)
+    os.makedirs(log_dir, exist_ok=True)
+
     logging.basicConfig(
         filename=LOG_FILE,
         level=logging.INFO,
