@@ -97,7 +97,6 @@ def process_file(source_path: str, dest_dir: str, filename: str, logger) -> Tupl
         return "error", 1
 
     if not should_copy(source_path, dest_path):
-        logger.info(f"SKIPPED {filename}")
         return "skipped", 0
 
     try:
@@ -105,10 +104,8 @@ def process_file(source_path: str, dest_dir: str, filename: str, logger) -> Tupl
         copy_atomically(source_path, dest_path)
 
         if dest_exists:
-            logger.info(f"OVERWRITTEN {filename}")
             return "overwritten", 0
         else:
-            logger.info(f"COPIED {filename}")
             return "copied", 0
     except Exception as e:
         logger.error(f"ERROR {filename}: {e}")
@@ -121,31 +118,22 @@ def scan_directory(source_dir: str, dest_dir: str, logger) -> Tuple[int, int, in
     overwritten = 0
     errors = 0
 
-    try:
-        entries = os.listdir(source_dir)
-    except Exception as e:
-        logger.error(f"ERROR: cannot read source directory {source_dir}: {e}")
-        return 0, 0, 0, 1
+    for root, dirs, files in os.walk(source_dir):
+        for filename in files:
+            if not filename.lower().endswith('.csv'):
+                continue
 
-    for entry in entries:
-        source_path = os.path.join(source_dir, entry)
+            source_path = os.path.join(root, filename)
+            status, err = process_file(source_path, dest_dir, filename, logger)
 
-        if not os.path.isfile(source_path):
-            continue
-
-        if not entry.lower().endswith('.csv'):
-            continue
-
-        status, err = process_file(source_path, dest_dir, entry, logger)
-
-        if status == "copied":
-            copied += 1
-        elif status == "skipped":
-            skipped += 1
-        elif status == "overwritten":
-            overwritten += 1
-        elif status == "error":
-            errors += err
+            if status == "copied":
+                copied += 1
+            elif status == "skipped":
+                skipped += 1
+            elif status == "overwritten":
+                overwritten += 1
+            elif status == "error":
+                errors += err
 
     return copied, skipped, overwritten, errors
 
