@@ -39,7 +39,7 @@ cdr_publish.py
 
 ## Logging
 
-Logs: `logs/publish_process.log`
+Logs: `logs/cdr_publish.log`
 
 Format:
 ```

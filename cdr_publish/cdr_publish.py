@@ -30,7 +30,7 @@ except ImportError:
 # Setup logging
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_DIR = os.path.join(SCRIPT_DIR, "logs")
-LOG_FILE = os.path.join(LOG_DIR, "publish_process.log")
+LOG_FILE = os.path.join(LOG_DIR, "cdr_publish.log")
 
 
 def setup_logger():

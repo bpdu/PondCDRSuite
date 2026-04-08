@@ -25,7 +25,8 @@ cdr_organize/
 ├── cdr_organize.logrotate  # Logrotate configuration
 ├── cdr_organize.cron       # Cron jobs example
 ├── logs/                   # Log directory
-│   └── cdr_process.log     # Log file
+│   ├── cdr_organize_cdr.log  # CDR log file
+│   └── cdr_organize_lu.log   # LU log file
 └── README.md               # This file
 ```
 
@@ -63,9 +64,10 @@ python3 cdr_organize.py {CDR_BASE_DIR}/inbound/client1_lu {CDR_BASE_DIR}/outboun
 
 ## Verification
 
-Check the log:
+Check the logs:
 ```bash
-tail -f /opt/cdr_tools/cdr_organize/logs/cdr_process.log
+tail -f /opt/cdr_tools/cdr_organize/logs/cdr_organize_cdr.log
+tail -f /opt/cdr_tools/cdr_organize/logs/cdr_organize_lu.log
 ```
 
 Check destination:

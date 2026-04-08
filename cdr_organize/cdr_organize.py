@@ -9,8 +9,8 @@ from typing import Tuple, Optional
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_DIR = os.path.join(SCRIPT_DIR, "logs")
-CDR_LOG_FILE = os.path.join(LOG_DIR, "cdr_process.log")
-LU_LOG_FILE = os.path.join(LOG_DIR, "lu_process.log")
+CDR_LOG_FILE = os.path.join(LOG_DIR, "cdr_organize_cdr.log")
+LU_LOG_FILE = os.path.join(LOG_DIR, "cdr_organize_lu.log")
 
 
 def setup_loggers():

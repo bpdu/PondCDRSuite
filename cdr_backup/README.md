@@ -55,7 +55,7 @@ Note: Runs independently of cdr_sync/cdr_organize/cdr_publish chain.
 
 ## Logging
 
-Logs: `logs/backup_process.log`
+Logs: `logs/cdr_backup.log`
 
 Format:
 ```
