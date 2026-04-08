@@ -91,6 +91,9 @@ jobs:
               exit 1
             }
 
+            echo "  → Restoring stashed files..."
+            git stash pop 2>&1 || echo "  (no stash to restore)"
+
             echo "  ✓ Repository updated"
 
             # Show current commit
