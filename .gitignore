@@ -219,3 +219,4 @@ cdr_sync/configs/*.env
 cdr_sync/.env
 cdr_notify/*.db
 cdr_notify/*.db-*
+*.bak\n*.working\ncdr_tmp.sh
