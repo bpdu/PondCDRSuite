@@ -8,7 +8,7 @@ Web-based monitoring dashboard for CDR/LU file processing system. Provides real-
 
 ### Functional Requirements
 
-1. **Task Status Monitoring** - Show last run info for telna_cdr, telna_lu, plintron_fraud
+1. **Task Status Monitoring** - Show last run info for client1_cdr, client1_lu, client2_fraud
 2. **File Counts** - Display total processed files and breakdown by client
 3. **Error Tracking** - Show recent and unresolved errors
 4. **System Metrics** - Display disk usage (df -H), memory (free -m), CPU load (/proc/loadavg)
@@ -123,7 +123,7 @@ Response:
 {
   "tasks": [
     {
-      "name": "telna_cdr",
+      "name": "client1_cdr",
       "last_run": "2025-04-07T22:30:00Z",
       "status": "success" | "failed" | "pending",
       "duration_sec": 45,
@@ -143,8 +143,8 @@ Response:
   "cdr_files": 22186,
   "lu_files": 50269,
   "by_client": {
-    "edata": 8234,
-    "silver": 6521
+    "Company1": 8234,
+    "Company2": 6521
   }
 }
 ```

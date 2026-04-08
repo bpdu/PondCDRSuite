@@ -16,8 +16,10 @@ Standalone CLI utility for searching CDR/LU records by cdr_id or iccid. Provides
 
 ### Data Sources
 
-- CDR files: `/home/cdr_admin/CDRs/outbound/cdr/*/*.csv`
-- LU files: `/home/cdr_admin/CDRs/outbound/lu/*/*.csv`
+- CDR files: `{OUTBOUND_DIR}/cdr/*/*.csv`
+- LU files: `{OUTBOUND_DIR}/lu/*/*.csv`
+
+Where `{OUTBOUND_DIR}` is the base output directory (configured in deployment)
 
 ### Output Format
 
@@ -90,7 +92,7 @@ Standalone CLI utility for searching CDR/LU records by cdr_id or iccid. Provides
 
 ```python
 # Base path for CDR/LU files
-BASE_PATH = "/home/cdr_admin/CDRs/outbound"
+BASE_PATH = "{OUTBOUND_DIR}"  # Configure in deployment
 
 # Subdirectories
 CDR_SUBDIR = "cdr"

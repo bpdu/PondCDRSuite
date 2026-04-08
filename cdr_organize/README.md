@@ -5,11 +5,11 @@ Console utility for organizing incoming CSV files into client folders.
 ## Directory Structure
 
 ```
-/home/cdr_admin/CDRs/
+{CDR_BASE_DIR}/
 ├── inbound/              # Source files from SFTP downloads
-│   ├── telna_cdr/
-│   ├── telna_lu/
-│   └── pintron_fraud/
+│   ├── client1_cdr/
+│   ├── client1_lu/
+│   └── client2_fraud/
 └── outbound/             # Processed files organized by client
     ├── cdr/
     │   └── <client>/
@@ -33,19 +33,19 @@ cdr_organize/
 
 1. Copy utility to server:
 ```bash
-mkdir -p {PROJECT_DIR}/cdr_organize
-cp cdr_organize.py {PROJECT_DIR}/cdr_organize/
-chmod +x {PROJECT_DIR}/cdr_organize/cdr_organize.py
+mkdir -p /opt/cdr_tools/cdr_organize
+cp cdr_organize.py /opt/cdr_tools/cdr_organize/
+chmod +x /opt/cdr_tools/cdr_organize/cdr_organize.py
 ```
 
 2. Setup logrotate:
 ```bash
-sudo cp cdr_organize.logrotate {LOGROTATE_DIR}/cdr_organize
+sudo cp cdr_organize.logrotate /etc/logrotate.d/cdr_organize
 ```
 
 3. Setup cron (optional):
 ```bash
-sudo cp cdr_organize.cron {CRON_DIR}/cdr_organize
+sudo cp cdr_organize.cron /etc/cron.d/cdr_organize
 ```
 
 ## Usage
@@ -57,26 +57,26 @@ python3 cdr_organize.py <SOURCE_DIR> <DEST_DIR>
 
 Examples:
 ```bash
-python3 cdr_organize.py /home/cdr_admin/CDRs/inbound/telna_cdr /home/cdr_admin/CDRs/outbound
-python3 cdr_organize.py /home/cdr_admin/CDRs/inbound/telna_lu /home/cdr_admin/CDRs/outbound
+python3 cdr_organize.py {CDR_BASE_DIR}/inbound/client1_cdr {CDR_BASE_DIR}/outbound
+python3 cdr_organize.py {CDR_BASE_DIR}/inbound/client1_lu {CDR_BASE_DIR}/outbound
 ```
 
 ## Verification
 
 Check the log:
 ```bash
-tail -f {PROJECT_DIR}/cdr_organize/logs/cdr_process.log
+tail -f /opt/cdr_tools/cdr_organize/logs/cdr_process.log
 ```
 
 Check destination:
 ```bash
-ls -la /home/cdr_admin/CDRs/outbound/cdr/
-ls -la /home/cdr_admin/CDRs/outbound/lu/
+ls -la {CDR_BASE_DIR}/outbound/cdr/
+ls -la {CDR_BASE_DIR}/outbound/lu/
 ```
 
 Test run (dry run - just check what would be processed):
 ```bash
-ls /home/cdr_admin/CDRs/inbound/telna_cdr/*.csv | head -5
+ls {CDR_BASE_DIR}/inbound/client1_cdr/*.csv | head -5
 ```
 
 ## File Processing Rules

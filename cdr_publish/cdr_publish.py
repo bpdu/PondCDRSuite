@@ -51,7 +51,7 @@ def extract_date_from_filename(filename: str) -> Optional[str]:
     """
     Extract date from CDR/LU filename.
     Pattern: LIVE_{CLIENT}_{TYPE}_{START_DATETIME}_{N}_{END_DATETIME}.csv
-    Example: LIVE_Zeppelincompany_CDR_20260406200000_1_20260406211103.csv
+    Example: LIVE_Company1_CDR_20260406200000_1_20260406211103.csv
     Returns: 2026-04-06
     """
     match = re.search(r'_CDR_(\d{8})', filename) or re.search(r'_LU_(\d{8})', filename)
