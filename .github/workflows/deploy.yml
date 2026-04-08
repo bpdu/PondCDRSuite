@@ -85,9 +85,9 @@ jobs:
               exit 1
             }
 
-            echo "  → Pulling origin/main..."
-            git pull origin main 2>&1 || {
-              echo "ERROR: git pull failed"
+            echo "  → Resetting to origin/main..."
+            git reset --hard origin/main 2>&1 || {
+              echo "ERROR: git reset failed"
               exit 1
             }
 
