@@ -51,7 +51,7 @@ Add to crontab to run daily at 23:50:
 50 23 * * * {USER} {PROJECT_DIR}/cdr_backup/cdr_backup.py
 ```
 
-Note: Runs independently of cdr_sync/cdr_organize/cdr_publish chain.
+Note: Runs independently of cdr_sync/cdr_transform/cdr_load chain.
 
 ## Logging
 

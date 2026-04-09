@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
 
 import database
@@ -9,28 +10,16 @@ import telegram_sender
 import utils
 
 
-def main() -> None:
-    logging.Formatter.converter = time.gmtime
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - [%(levelname)s] %(message)s",
-        datefmt="%Y-%m-%d %H:%M GMT",
-    )
+def process_folder(folder: str, folder_name: str, config: dict, send_email: bool, send_telegram: bool) -> int:
+    """Process files from a single folder (CDR or LU)."""
+    if not os.path.isdir(folder):
+        logging.warning(f"{folder_name} folder does not exist: {folder}")
+        return 0
 
-    config = utils.load_config()
-
-    cdr_folder = config.get("CDR_FOLDER", "").strip()
-    if not cdr_folder:
-        raise RuntimeError(f"CDR_FOLDER is not set in {utils.CONFIG_PATH}")
-
-    db_name = config.get("DB_NAME", "cdr_files.db").strip() or "cdr_files.db"
-    database.init_db(db_name)
-    send_email = utils.is_enabled(config.get("EMAIL_SEND", ""))
-    send_telegram = utils.is_enabled(config.get("TELEGRAM_SEND", ""))
-    logging.info("Starting CDR notify service")
-
+    logging.info(f"Processing {folder_name} folder: {folder}")
     processed = 0
-    for full_path in utils.get_files(cdr_folder):
+
+    for full_path in utils.get_files(folder):
         file_hash = utils.calculate_hash(full_path)
         if not file_hash:
             logging.error("Failed to calculate hash for %s", full_path)
@@ -59,8 +48,39 @@ def main() -> None:
         logging.info("File processed successfully: %s", utils.get_filename(full_path))
         processed += 1
 
+    return processed
+
+
+def main() -> None:
+    logging.Formatter.converter = time.gmtime
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M GMT",
+    )
+
+    config = utils.load_config()
+
+    cdr_folder = config.get("CDR_FOLDER", "").strip()
+    if not cdr_folder:
+        raise RuntimeError(f"CDR_FOLDER is not set in {utils.CONFIG_PATH}")
+
+    lu_folder = config.get("LU_FOLDER", "").strip()
+
+    db_name = config.get("DB_NAME", "cdr_files.db").strip() or "cdr_files.db"
+    database.init_db(db_name)
+    send_email = utils.is_enabled(config.get("EMAIL_SEND", ""))
+    send_telegram = utils.is_enabled(config.get("TELEGRAM_SEND", ""))
+    logging.info("Starting CDR notify service")
+
+    processed = 0
+    processed += process_folder(cdr_folder, "CDR", config, send_email, send_telegram)
+
+    if lu_folder:
+        processed += process_folder(lu_folder, "LU", config, send_email, send_telegram)
+
     if not processed:
-        logging.info("No new CDR files found")
+        logging.info("No new CDR/LU files found")
 
 
 if __name__ == "__main__":

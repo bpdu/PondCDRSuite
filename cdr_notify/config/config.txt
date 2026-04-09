@@ -1,4 +1,5 @@
-CDR_FOLDER=/path/to/cdr_folder
+CDR_FOLDER=/home/cdr_admin/outbound/cdr
+LU_FOLDER=/home/cdr_admin/outbound/lu
 DB_NAME=/path/to/cdr_files.db
 
 TELEGRAM_SEND=True

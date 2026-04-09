@@ -13,8 +13,8 @@ Cron configuration files for PondCDRSuite automated processing.
 
 | Cron | Schedule | Chain |
 |------|----------|-------|
-| telna_cdr | `0 * * * *` | sync → organize → publish |
-| telna_lu | `30 * * * *` | sync → organize → publish |
+| telna_cdr | `0 * * * *` | sync → transform → load |
+| telna_lu | `30 * * * *` | sync → transform → load |
 | cdr_backup | `50 23 * * *` | archive daily files |
 
 ## Deployment
@@ -62,8 +62,8 @@ sudo tail -f /var/log/syslog | grep CRON
 
 # Check individual logs
 tail -f /home/cdr_admin/PondCDRSuite/cdr_sync/logs/*.json
-tail -f /home/cdr_admin/PondCDRSuite/cdr_organize/logs/cdr_organize_*.log
-tail -f /home/cdr_admin/PondCDRSuite/cdr_publish/logs/cdr_publish.log
+tail -f /home/cdr_admin/PondCDRSuite/cdr_transform/logs/cdr_transform_*.log
+tail -f /home/cdr_admin/PondCDRSuite/cdr_load/logs/cdr_load.log
 tail -f /home/cdr_admin/PondCDRSuite/cdr_backup/logs/cdr_backup.log
 ```
 
@@ -91,7 +91,6 @@ If cron jobs don't run:
    ```bash
    # Test CDR chain
    /home/cdr_admin/PondCDRSuite/cdr_sync/cdr_sync.sh pull configs/telna_cdr.env
-   /home/cdr_admin/PondCDRSuite/cdr_organize/cdr_organize.py /home/cdr_admin/CDRs/inbound/telna_cdr /home/cdr_admin/CDRs/outbound
-   /home/cdr_admin/PondCDRSuite/cdr_publish/cdr_publish.py
+   python3 /home/cdr_admin/PondCDRSuite/cdr_transform/cdr_transform.py cdr
+   python3 /home/cdr_admin/PondCDRSuite/cdr_load/cdr_load.py
 ```
-   ```

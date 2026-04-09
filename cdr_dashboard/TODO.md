@@ -18,7 +18,7 @@ Web-based monitoring dashboard for CDR/LU file processing system. Provides real-
 ### Data Sources
 
 - cdr_sync logs: `../cdr_sync/logs/<config>_<YYYYMMDD>.json`
-- cdr_organize logs: `../cdr_organize/logs/{cdr,lu}_process.log`
+- cdr_transform logs: `../cdr_transform/logs/{cdr,lu}_transform.log`
 - System commands: `df -H`, `free -m`, `cat /proc/loadavg`
 - cdr_search module: `../cdr_search/cdr_search.py`
 
@@ -47,7 +47,7 @@ Web-based monitoring dashboard for CDR/LU file processing system. Provides real-
 ### Phase 2: Database Setup
 - [ ] Create SQLite database schema
   - [ ] `cdr_sync_runs` table
-  - [ ] `cdr_organize_runs` table
+  - [ ] `cdr_transform_runs` table
   - [ ] `errors` table
 - [ ] Create database.py module
   - [ ] Database connection management
@@ -59,7 +59,7 @@ Web-based monitoring dashboard for CDR/LU file processing system. Provides real-
   - [ ] Parse JSON log format
   - [ ] Extract: timestamp, status, duration, files_count, error
   - [ ] Handle multiple config files
-- [ ] Create parsers/cdr_organize.py
+- [ ] Create parsers/cdr_transform.py
   - [ ] Parse text log format
   - [ ] Extract RUN SUMMARY lines
   - [ ] Extract error lines
@@ -226,9 +226,9 @@ CREATE TABLE cdr_sync_runs (
     error TEXT
 );
 
-CREATE TABLE cdr_organize_runs (
+CREATE TABLE cdr_transform_runs (
     id INTEGER PRIMARY KEY,
-    source_dir TEXT NOT NULL,
+    file_type TEXT NOT NULL,
     copied INTEGER,
     skipped INTEGER,
     overwritten INTEGER,

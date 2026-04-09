@@ -1,11 +1,11 @@
-# cdr_publish
+# cdr_load
 
-Publish CDR/LU files for HTTP access with three different views.
+Load CDR/LU files for HTTP access with three different views.
 
 ## Directory Structure
 
 ```
-/srv/cdr_publish/
+/srv/cdr_load/
 ├── cdr/
 │   ├── raw/                    # All files mixed in root
 │   ├── by_date/                # Organized by date (YYYY-MM-DD/)
@@ -20,26 +20,26 @@ Publish CDR/LU files for HTTP access with three different views.
 
 ```bash
 # Create all three structures (default)
-python3 cdr_publish.py
+python3 cdr_load.py
 
 # Create specific structure only
-python3 cdr_publish.py --mode raw
-python3 cdr_publish.py --mode by_date
-python3 cdr_publish.py --mode by_company
+python3 cdr_load.py --mode raw
+python3 cdr_load.py --mode by_date
+python3 cdr_load.py --mode by_company
 ```
 
 ## Integration
 
 Run after cdr_transform in cron:
 ```bash
-cdr_sync.sh pull configs/telna_cdr.env && \
-python3 cdr_transform.py cdr && \
-cdr_publish.py
+cdr_sync.sh pull configs/client1_cdr.env && \
+cdr_transform.py {CDR_BASE_DIR}/inbound/client1_cdr /home/cdr_admin/outbound && \
+cdr_load.py
 ```
 
 ## Logging
 
-Logs: `logs/cdr_publish.log`
+Logs: `logs/cdr_load.log`
 
 Format:
 ```

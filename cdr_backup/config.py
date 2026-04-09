@@ -3,8 +3,8 @@
 cdr_backup configuration
 """
 
-# Source directory (cdr_organize output - source of truth)
-SOURCE_BASE = "/home/cdr_admin/CDRs/outbound"
+# Source directory (cdr_transform output - source of truth)
+SOURCE_BASE = "/home/cdr_admin/outbound"
 
 # Target directory (backup storage)
 TARGET_BASE = "/home/cdr_admin/CDRs/backup"
