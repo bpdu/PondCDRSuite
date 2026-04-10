@@ -1,142 +1,142 @@
-# Реализация модуля cdr_copy
+# Implementation of cdr_copy module
 
-**Дата:** 2026-04-10
-**Статус:** ✅ Done
+**Date:** 2026-04-10
+**Status:** ✅ Done
 
-## Краткое описание
+## Brief description
 
-Создан новый модуль `cdr_copy` для копирования CDR/LU файлов из исходной папки в целевую на основе правил конфигурации.
+Created a new module `cdr_copy` for copying CDR/LU files from source folder to destination folder based on configuration rules.
 
-## Требования
+## Requirements
 
-### Функциональные требования
-- Копирование файлов из source в destination
-- Конфигурационные задачи в формате .env
-- Фильтрация по компании, датам
-- Флаги структуры: `-by_company`, `-by_date`, `-flat`
-- Удобные флаги: `-yesterday`, `-today`
-- Dry-run режим для предпросмотра
-- Пропуск существующих файлов
-- Атомарное копирование
+### Functional requirements
+- Copy files from source to destination
+- Configuration tasks in .env format
+- Filtering by company, dates
+- Structure flags: `-by_company`, `-by_date`, `-flat`
+- Convenience flags: `-yesterday`, `-today`
+- Dry-run mode for preview
+- Skip existing files
+- Atomic copying
 
-### Нефункциональные требования
-- Следование паттернам проекта
-- Логирование с ротацией
-- Обработка ошибок
-- Валидация конфигурации
+### Non-functional requirements
+- Follow project patterns
+- Logging with rotation
+- Error handling
+- Configuration validation
 
-## Реализация
+## Implementation
 
-### Структура модуля
+### Module structure
 
 ```
 cdr_copy/
-├── cdr_copy.py              # Основной скрипт (390 строк)
-├── config.py                # Класс конфигурации (165 строк)
+├── cdr_copy.py              # Main script (390 lines)
+├── config.py                # Configuration class (165 lines)
 ├── requirements.txt         # python-dotenv==1.0.0
-├── README.md                # Документация
+├── README.md                # Documentation
 ├── .gitignore
-├── cdr_copy.logrotate       # Конфигурация ротации логов
-├── logs/                    # Лог-файлы
-└── config/                  # Конфигурации задач
-    └── example.env          # Пример конфигурации
+├── cdr_copy.logrotate       # Log rotation configuration
+├── logs/                    # Log files
+└── config/                  # Task configurations
+    └── example.env          # Example configuration
 ```
 
-### Ключевые компоненты
+### Key components
 
-#### 1. Конфигурация (config.py)
+#### 1. Configuration (config.py)
 
-**Класс CDRCopyConfig:**
-- Загрузка .env через `python-dotenv`
-- Валидация обязательных параметров (from, to)
-- Парсинг флагов (наличие параметра = True)
-- Валидация форматов дат
-- Проверка несовместимых флагов
+**CDRCopyConfig class:**
+- Loading .env via `python-dotenv`
+- Validation of required parameters (from, to)
+- Parsing flags (parameter presence = True)
+- Validation of date formats
+- Checking incompatible flags
 
-**Важное исправление:**
-Флаги обрабатываются корректно - флаг считается установленным, если ключ присутствует в .env файле, независимо от значения.
+**Important fix:**
+Flags are handled correctly - a flag is considered set if the key is present in the .env file, regardless of value.
 
-#### 2. Основной скрипт (cdr_copy.py)
+#### 2. Main script (cdr_copy.py)
 
-**Утилитарные функции (реuse из существующих модулей):**
-- `extract_date_from_filename()` - из `cdr_load/cdr_load.py:50-65`
-- `extract_company()` - из `cdr_organize/cdr_organize.py:50-63` + замена _ на пробелы
-- `get_file_type()` - из `cdr_organize/cdr_organize.py:42-47`
-- `copy_atomically()` - из `cdr_organize/cdr_organize.py:82-96` + dry-run поддержка
+**Utility functions (reused from existing modules):**
+- `extract_date_from_filename()` - from `cdr_load/cdr_load.py:50-65`
+- `extract_company()` - from `cdr_organize/cdr_organize.py:50-63` + replace _ with spaces
+- `get_file_type()` - from `cdr_organize/cdr_organize.py:42-47`
+- `copy_atomically()` - from `cdr_organize/cdr_organize.py:82-96` + dry-run support
 
-**Логика обработки:**
-- `should_process_file()` - фильтрация по типу, компании, датам
-- `build_dest_path()` - построение пути с учётом флагов
-- `should_copy()` - инвертированная логика (пропуск существующих)
-- `process_file()` - обработка одного файла
-- `scan_directory()` - сканирование с поддержкой -flat
+**Processing logic:**
+- `should_process_file()` - filtering by type, company, dates
+- `build_dest_path()` - path building considering flags
+- `should_copy()` - inverted logic (skip existing)
+- `process_file()` - single file processing
+- `scan_directory()` - scanning with -flat support
 
-**Система логирования:**
-- Лог-файл: `cdr_copy/logs/cdr_copy.log`
-- Формат: `YYYY-MM-DD HH:MM:SS - MESSAGE`
-- Dry-run режим: дублирование в stdout
-- Уровни: INFO, WARNING, ERROR
+**Logging system:**
+- Log file: `cdr_copy/logs/cdr_copy.log`
+- Format: `YYYY-MM-DD HH:MM:SS - MESSAGE`
+- Dry-run mode: duplication to stdout
+- Levels: INFO, WARNING, ERROR
 
-### Поддерживаемые функции
+### Supported functions
 
-✅ **Базовое копирование:**
+✅ **Basic copying:**
 ```bash
 python3 cdr_copy/cdr_copy.py task_name
 ```
 
-✅ **Dry-run режим:**
+✅ **Dry-run mode:**
 ```bash
 python3 cdr_copy/cdr_copy.py task_name --dry-run
 ```
 
-✅ **Флаг -by_company:**
-Раскладывает файлы по папкам компаний с заменой подчёркиваний на пробелы.
-Пример: `LIVE_Telna_Corp_CDR_...` → `Telna Corp/file.csv`
+✅ **-by_company flag:**
+Organizes files into company folders with underscores replaced by spaces.
+Example: `LIVE_Telna_Corp_CDR_...` → `Telna Corp/file.csv`
 
-✅ **Флаг -by_date:**
-Раскладывает файлы по папкам дат в формате YYYY-MM-DD.
-Пример: `2026-04-10/file.csv`
+✅ **-by_date flag:**
+Organizes files into date folders in YYYY-MM-DD format.
+Example: `2026-04-10/file.csv`
 
-✅ **Комбинация флагов:**
+✅ **Flag combination:**
 `-by_company -by_date` → `Telna Corp/2026-04-10/file.csv`
 
-✅ **Флаг -flat:**
-Рекурсивный поиск файлов с плоской структурой назначения.
+✅ **-flat flag:**
+Recursive file search with flat destination structure.
 
-✅ **Фильтрация по company:**
+✅ **Company filtering:**
 ```ini
 company="Telna"
 ```
-Копирует только файлы с "Telna" в названии компании.
+Copies only files with "Telna" in company name.
 
-✅ **Фильтрация по датам:**
+✅ **Date filtering:**
 ```ini
 from_date="20260101"
 to_date="20261231"
 ```
 
-✅ **Удобные флаги:**
+✅ **Convenience flags:**
 ```ini
--yesterday  # Только вчерашние файлы
--today      # Только сегодняшние файлы
+-yesterday  # Only yesterday's files
+-today      # Only today's files
 ```
 
-✅ **Пропуск существующих файлов:**
-Файлы, которые уже существуют в назначении, пропускаются.
+✅ **Skip existing files:**
+Files that already exist in destination are skipped.
 
-✅ **Атомарное копирование:**
-Использует временные файлы (.tmp) для предотвращения частичной записи.
+✅ **Atomic copying:**
+Uses temporary files (.tmp) to prevent partial writes.
 
-## Результаты тестирования
+## Test results
 
-### Тест 1: Базовое копирование
-✅ Файлы копируются из source в destination
+### Test 1: Basic copying
+✅ Files are copied from source to destination
 
-### Тест 2: Dry-run режим
-✅ Показывает что будет скопировано без реального копирования
+### Test 2: Dry-run mode
+✅ Shows what will be copied without actual copying
 
-### Тест 3: Флаг -by_company
-✅ Файлы разбиты по папкам компаний с заменой _ на пробелы
+### Test 3: -by_company flag
+✅ Files organized into company folders with _ replaced by spaces
 ```
 dest/
 ├── Telna Corp/
@@ -145,8 +145,8 @@ dest/
     └── file.csv
 ```
 
-### Тест 4: Флаг -by_date
-✅ Файлы разбиты по папкам дат
+### Test 4: -by_date flag
+✅ Files organized into date folders
 ```
 dest/
 └── 2026-04-10/
@@ -154,8 +154,8 @@ dest/
     └── file2.csv
 ```
 
-### Тест 5: Комбинация -by_company -by_date
-✅ Файлы разбиты по компаниям и датам
+### Test 5: Combination -by_company -by_date
+✅ Files organized by companies and dates
 ```
 dest/
 ├── Telna Corp/
@@ -166,70 +166,70 @@ dest/
         └── file.csv
 ```
 
-### Тест 6: Флаг -flat
-✅ Файлы из подпапок скопированы в плоскую структуру
+### Test 6: -flat flag
+✅ Files from subfolders copied to flat structure
 
-### Тест 7: Фильтрация по company
-✅ Скопированы только файлы с "Telna" в названии
+### Test 7: Company filtering
+✅ Only files with "Telna" in name were copied
 
-### Тест 8: Фильтрация по датам (from_date)
-✅ Файлы до указанной даты пропущены
+### Test 8: Date filtering (from_date)
+✅ Files before specified date were skipped
 
-### Тест 9: Пропуск существующих файлов
-✅ Повторный запуск пропускает существующие файлы
+### Test 9: Skip existing files
+✅ Repeated run skips existing files
 
-## Проблемы и решения
+## Problems and solutions
 
-### Проблема 1: AttributeError в _is_flag_set
-**Описание:** `dotenv_values()` возвращает `None` для флагов без значений, что вызывало AttributeError.
+### Problem 1: AttributeError in _is_flag_set
+**Description:** `dotenv_values()` returns `None` for flags without values, causing AttributeError.
 
-**Решение:** Изменена логика проверки - флаг считается установленным, если ключ присутствует в словаре, независимо от значения.
+**Solution:** Changed check logic - flag is considered set if key is present in dictionary, regardless of value.
 
-**Код:**
+**Code:**
 ```python
 def _is_flag_set(env_values: dict, flag_name: str) -> bool:
     return flag_name in env_values
 ```
 
-### Проблема 2: Установка зависимостей
-**Описание:** Пользователь запросил использовать тот же метод установки, что и в cdr_sync.
+### Problem 2: Installing dependencies
+**Description:** User requested using same installation method as cdr_sync.
 
-**Решение:** Использован `pip3 install python-dotenv==1.0.0` (аналогично другим модулям).
+**Solution:** Used `pip3 install python-dotenv==1.0.0` (same as other modules).
 
-## Интеграция с существующей системой
+## Integration with existing system
 
-### Следование паттернам проекта
-✅ Логирование как в `cdr_organize` (отдельный лог-файл)
-✅ Атомарное копирование из `cdr_organize`
-✅ Извлечение даты из `cdr_load`
-✅ Извлечение компании из `cdr_organize`
-✅ Загрузка .env через `python-dotenv` (как в `cdr_sync`)
+### Following project patterns
+✅ Logging like `cdr_organize` (separate log file)
+✅ Atomic copying from `cdr_organize`
+✅ Date extraction from `cdr_load`
+✅ Company extraction from `cdr_organize`
+✅ Loading .env via `python-dotenv` (like `cdr_sync`)
 
-### Совместимость
-✅ Работает независимо от других модулей
-✅ Может использоваться в цепочках: `cdr_sync` → `cdr_copy` → `cdr_organize`
-✅ Не конфликтует с `cdr_load`, `cdr_publish`, `cdr_backup`
+### Compatibility
+✅ Works independently from other modules
+✅ Can be used in chains: `cdr_sync` → `cdr_copy` → `cdr_organize`
+✅ Does not conflict with `cdr_load`, `cdr_publish`, `cdr_backup`
 
-## Документация
+## Documentation
 
-Создана документация в `README.md`:
-- Подробное описание всех параметров
-- Примеры конфигураций
-- Примеры использования
-- Описание формата логов
-- Инструкция по настройке ротации
+Created documentation in `README.md`:
+- Detailed description of all parameters
+- Configuration examples
+- Usage examples
+- Log format description
+- Rotation setup instructions
 
-## Статус: ✅ Done
+## Status: ✅ Done
 
-Модуль полностью реализован, протестирован и готов к использованию.
+Module is fully implemented, tested and ready to use.
 
-Все требования выполнены:
-- ✅ Конфигурационные задачи в .env формате
-- ✅ Все флаги структуры работают
-- ✅ Фильтрация по компании и датам
-- ✅ Dry-run режим
-- ✅ Атомарное копирование
-- ✅ Логирование с ротацией
-- ✅ Обработка ошибок
-- ✅ Следование паттернам проекта
-- ✅ Полная документация
+All requirements completed:
+- ✅ Configuration tasks in .env format
+- ✅ All structure flags work
+- ✅ Filtering by company and dates
+- ✅ Dry-run mode
+- ✅ Atomic copying
+- ✅ Logging with rotation
+- ✅ Error handling
+- ✅ Following project patterns
+- ✅ Full documentation

@@ -1,152 +1,152 @@
 # cdr_copy
 
-Модуль для копирования CDR/LU файлов из исходной папки в целевую на основе правил конфигурации.
+Module for copying CDR/LU files from source folder to destination folder based on configuration rules.
 
-## Установка
+## Installation
 
-Установите зависимости:
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Использование
+## Usage
 
-### Базовое использование
+### Basic usage
 
 ```bash
-# Прямой вызов Python
-python3 cdr_copy/cdr_copy.py <имя_задачи>
+# Direct Python call
+python3 cdr_copy/cdr_copy.py <task_name>
 
-# С dry-run режимом
-python3 cdr_copy/cdr_copy.py <имя_задачи> --dry-run
+# With dry-run mode
+python3 cdr_copy/cdr_copy.py <task_name> --dry-run
 
-# Примеры
+# Examples
 python3 cdr_copy/cdr_copy.py telna_cdr
 python3 cdr_copy/cdr_copy.py telna_cdr --dry-run
 ```
 
-### Конфигурационные файлы
+### Configuration files
 
-Конфигурационные задачи хранятся в `cdr_copy/config/<имя_задачи>.env`
+Configuration tasks are stored in `cdr_copy/config/<task_name>.env`
 
-Для создания новой задачи:
-1. Скопируйте шаблон `cdr_copy/config/task.env.example`
-2. Переименуйте в `<имя_задачи>.env`
-3. Заполните параметры
+To create a new task:
+1. Copy the template `cdr_copy/config/task.env.example`
+2. Rename to `<task_name>.env`
+3. Fill in the parameters
 
-#### Пример конфигурации
+#### Example configuration
 
 ```ini
-# Обязательные параметры
+# Required parameters
 from="/source/folder"
 to="/target/folder"
 
-# Опциональные фильтры
+# Optional filters
 company="ClientName"
 
-# Флаги структуры (yes/no)
+# Structure flags (yes/no)
 by_company=no
 flat=no
 by_date=no
 
-# Удобные флаги для быстрой фильтрации (yes/no)
+# Convenient flags for quick filtering (yes/no)
 yesterday=no
 today=no
 
-# Диапазоны дат (формат YYYYMMDD)
+# Date ranges (YYYYMMDD format)
 from_date="20260101"
 to_date="20261231"
 ```
 
-## Описание параметров
+## Parameter description
 
-### Обязательные параметры
+### Required parameters
 
-- **from** - Исходная папка с файлами
-  - Должна существовать
-  - Проверяется при запуске
+- **from** - Source folder with files
+  - Must exist
+  - Checked at startup
 
-- **to** - Целевая папка для копирования
-  - Создаётся автоматически если не существует
-  - Должна быть доступна для записи
+- **to** - Destination folder for copying
+  - Created automatically if doesn't exist
+  - Must be writable
 
-### Опциональные фильтры
+### Optional filters
 
-- **company** - Фильтрация по названию компании
-  - Ищет подстроку в названии компании
-  - Пример: `company="eData"` найдёт файлы с `LIVE_eData_Online_CDR_...`
+- **company** - Filter by company name
+  - Searches for substring in company name
+  - Example: `company="eData"` will find files with `LIVE_eData_Online_CDR_...`
 
-### Флаги структуры
+### Structure flags
 
-Флаги принимают значения `yes` или `no` и могут комбинироваться:
+Flags accept values `yes` or `no` and can be combined:
 
-- **by_company** - Раскладывать файлы по папкам компаний
-  - Извлекает компанию из имени файла
-  - Заменяет подчёркивания на пробелы
-  - Пример: `LIVE_Telna_Corp_CDR_...` → `Telna Corp/`
-  - Значение: `yes` или `no`
+- **by_company** - Organize files into company folders
+  - Extracts company from filename
+  - Replaces underscores with spaces
+  - Example: `LIVE_Telna_Corp_CDR_...` → `Telna Corp/`
+  - Value: `yes` or `no`
 
-- **by_date** - Раскладывать файлы по папкам дат
-  - Извлекает дату из имени файла
-  - Формат папки: YYYY-MM-DD
-  - Пример: `2026-04-10/`
-  - Значение: `yes` или `no`
+- **by_date** - Organize files into date folders
+  - Extracts date from filename
+  - Folder format: YYYY-MM-DD
+  - Example: `2026-04-10/`
+  - Value: `yes` or `no`
 
-- **flat** - Плоская структура из подпапок
-  - Рекурсивно сканирует исходную папку
-  - Копирует все файлы в целевую папку без сохранения структуры
-  - Значение: `yes` или `no`
+- **flat** - Flat structure from subfolders
+  - Recursively scans source folder
+  - Copies all files to destination folder without preserving structure
+  - Value: `yes` or `no`
 
-**Примеры комбинаций:**
+**Combination examples:**
 
-| Флаги | Результат |
+| Flags | Result |
 |-------|-----------|
-| Все `no` | `to/filename.csv` |
+| All `no` | `to/filename.csv` |
 | `by_company=yes` | `to/Telna Corp/filename.csv` |
 | `by_date=yes` | `to/2026-04-10/filename.csv` |
 | `by_company=yes by_date=yes` | `to/Telna Corp/2026-04-10/filename.csv` |
-| `flat=yes` | `to/filename.csv` (из всех подпапок) |
+| `flat=yes` | `to/filename.csv` (from all subfolders) |
 
-### Флаги фильтрации по дате
+### Date filtering flags
 
-Флаги принимают значения `yes` или `no`:
+Flags accept values `yes` or `no`:
 
-- **yesterday** - Только вчерашние файлы
-  - Устанавливает from_date и to_date на вчерашний день
-  - Значение: `yes` или `no`
+- **yesterday** - Only yesterday's files
+  - Sets from_date and to_date to yesterday
+  - Value: `yes` or `no`
 
-- **today** - Только сегодняшние файлы
-  - Устанавливает from_date и to_date на сегодняшний день
-  - Значение: `yes` или `no`
+- **today** - Only today's files
+  - Sets from_date and to_date to today
+  - Value: `yes` or `no`
 
-**Важно:** Нельзя использовать `yesterday=yes` и `today=yes` одновременно.
+**Important:** Cannot use `yesterday=yes` and `today=yes` simultaneously.
 
-### Диапазоны дат
+### Date ranges
 
-- **from_date** - Игнорировать файлы до этой даты (формат YYYYMMDD)
-- **to_date** - Игнорировать файлы после этой даты (формат YYYYMMDD)
+- **from_date** - Ignore files before this date (YYYYMMDD format)
+- **to_date** - Ignore files after this date (YYYYMMDD format)
 
-## Примеры использования
+## Usage examples
 
-### Пример 1: Простое копирование
+### Example 1: Simple copy
 
-Конфигурация `config/telna_cdr.env`:
+Configuration `config/telna_cdr.env`:
 
 ```ini
 from="/home/cdr_admin/incoming/telna"
 to="/home/cdr_admin/outbound/telna"
 ```
 
-Запуск:
+Run:
 
 ```bash
 python3 cdr_copy/cdr_copy.py telna_cdr
 ```
 
-### Пример 2: Сортировка по компаниям
+### Example 2: Sort by companies
 
-Конфигурация `config/all_clients.env`:
+Configuration `config/all_clients.env`:
 
 ```ini
 from="/home/cdr_admin/incoming"
@@ -154,7 +154,7 @@ to="/home/cdr_admin/processed"
 by_company=yes
 ```
 
-Результат:
+Result:
 
 ```
 /home/cdr_admin/processed/
@@ -164,9 +164,9 @@ by_company=yes
 │   └── file2.csv
 ```
 
-### Пример 3: Сортировка по датам
+### Example 3: Sort by dates
 
-Конфигурация `config/daily_cdr.env`:
+Configuration `config/daily_cdr.env`:
 
 ```ini
 from="/home/cdr_admin/incoming"
@@ -174,7 +174,7 @@ to="/home/cdr_admin/archive"
 by_date=yes
 ```
 
-Результат:
+Result:
 
 ```
 /home/cdr_admin/archive/
@@ -184,9 +184,9 @@ by_date=yes
 │   └── file2.csv
 ```
 
-### Пример 4: Комбинированная сортировка
+### Example 4: Combined sorting
 
-Конфигурация `config/organized.env`:
+Configuration `config/organized.env`:
 
 ```ini
 from="/home/cdr_admin/incoming"
@@ -195,7 +195,7 @@ by_company=yes
 by_date=yes
 ```
 
-Результат:
+Result:
 
 ```
 /home/cdr_admin/organized/
@@ -209,9 +209,9 @@ by_date=yes
         └── file3.csv
 ```
 
-### Пример 5: Плоская структура
+### Example 5: Flat structure
 
-Конфигурация `config/flat.env`:
+Configuration `config/flat.env`:
 
 ```ini
 from="/home/cdr_admin/incoming/telna"
@@ -219,18 +219,18 @@ to="/home/cdr_admin/flat"
 flat=yes
 ```
 
-Результат:
+Result:
 
 ```
 /home/cdr_admin/flat/
-├── file1.csv (из /incoming/telna/subdir1/)
-├── file2.csv (из /incoming/telna/subdir2/)
-└── file3.csv (из /incoming/telna/)
+├── file1.csv (from /incoming/telna/subdir1/)
+├── file2.csv (from /incoming/telna/subdir2/)
+└── file3.csv (from /incoming/telna/)
 ```
 
-### Пример 6: Фильтрация по компании
+### Example 6: Filter by company
 
-Конфигурация `config/edatA_only.env`:
+Configuration `config/edata_only.env`:
 
 ```ini
 from="/home/cdr_admin/incoming"
@@ -238,11 +238,11 @@ to="/home/cdr_admin/edata"
 company="eData"
 ```
 
-Скопирует только файлы с `eData` в названии компании.
+Will copy only files with `eData` in company name.
 
-### Пример 7: Вчерашние файлы
+### Example 7: Yesterday's files
 
-Конфигурация `config/yesterday.env`:
+Configuration `config/yesterday.env`:
 
 ```ini
 from="/home/cdr_admin/incoming"
@@ -250,11 +250,11 @@ to="/home/cdr_admin/yesterday"
 yesterday=yes
 ```
 
-Скопирует только файлы за вчерашний день.
+Will copy only files from yesterday.
 
-### Пример 8: Диапазон дат
+### Example 8: Date range
 
-Конфигурация `config/q1_2026.env`:
+Configuration `config/q1_2026.env`:
 
 ```ini
 from="/home/cdr_admin/incoming"
@@ -263,17 +263,17 @@ from_date="20260101"
 to_date="20260331"
 ```
 
-Скопирует только файлы за Q1 2026.
+Will copy only files from Q1 2026.
 
-## Dry-run режим
+## Dry-run mode
 
-Режим предпросмотра без реального копирования:
+Preview mode without actual copying:
 
 ```bash
 python3 cdr_copy/cdr_copy.py telna_cdr --dry-run
 ```
 
-Вывод:
+Output:
 
 ```
 2026-04-10 15:30:45 - DRY RUN MODE - no files will be copied
@@ -282,11 +282,11 @@ python3 cdr_copy/cdr_copy.py telna_cdr --dry-run
 2026-04-10 15:30:48 - RUN SUMMARY: copied=0 skipped=0 errors=0 dry_run_skipped=2
 ```
 
-## Логирование
+## Logging
 
-Лог-файлы хранятся в `cdr_copy/logs/cdr_copy.log`.
+Log files are stored in `cdr_copy/logs/cdr_copy.log`.
 
-### Формат логов
+### Log format
 
 ```
 2026-04-10 15:30:45 - COPIED LIVE_Telna_CDR_20260410...
@@ -295,65 +295,65 @@ python3 cdr_copy/cdr_copy.py telna_cdr --dry-run
 2026-04-10 15:30:48 - RUN SUMMARY: copied=10 skipped=5 errors=0
 ```
 
-### Ротация логов
+### Log rotation
 
-Для настройки ротации используйте logrotate:
+To configure rotation, use logrotate:
 
 ```bash
-# Установить конфигурацию logrotate
+# Install logrotate configuration
 sudo cp cdr_copy.logrotate /etc/logrotate.d/cdr_copy
 ```
 
-Конфигурация хранит 7 дней логов с сжатием.
+Configuration stores 7 days of logs with compression.
 
-## Обработка ошибок
+## Error handling
 
-### Валидация конфигурации
+### Configuration validation
 
-Модуль проверяет:
+Module checks:
 
-- Обязательные параметры (from, to)
-- Существование исходной папки
-- Возможность создания целевой папки
-- Права на запись в целевую папку
-- Формат дат (YYYYMMDD)
-- Логику диапазона дат (from_date <= to_date)
-- Несовместимые флаги (yesterday=yes и today=yes)
+- Required parameters (from, to)
+- Source folder existence
+- Ability to create destination folder
+- Write permissions to destination folder
+- Date format (YYYYMMDD)
+- Date range logic (from_date <= to_date)
+- Incompatible flags (yesterday=yes and today=yes)
 
-### Коды возврата
+### Return codes
 
-- **0** - Успешное выполнение
-- **1** - Ошибка валидации или ошибки копирования
+- **0** - Successful execution
+- **1** - Validation error or copy errors
 
-## Особенности
+## Features
 
-- **Атомарное копирование** - использует временные файлы для предотвращения частичной записи
-- **Пропуск существующих файлов** - не перезаписывает файлы, которые уже существуют
-- **Извлечение метаданных** - использует паттерны имён файлов для получения даты и компании
-- **Гибкая фильтрация** - комбинации флагов для различных сценариев использования
+- **Atomic copying** - uses temporary files to prevent partial writes
+- **Skip existing files** - does not overwrite files that already exist
+- **Metadata extraction** - uses filename patterns to get date and company
+- **Flexible filtering** - flag combinations for various use cases
 
-## Формат имени файла
+## Filename format
 
-Модуль ожидает файлы в формате:
+Module expects files in format:
 
 ```
 LIVE_{Company}_{Type}_{DateTime}_{N}_{EndDateTime}.csv
 ```
 
-Примеры:
+Examples:
 
 - `LIVE_eData_Online_CDR_20260323090000_1_20260323101228.csv`
 - `LIVE_Telna_Corp_LU_20260407120000_1_20260407123456.csv`
 
-## Интеграция
+## Integration
 
-Модуль может использоваться в цепочках:
+Module can be used in chains:
 
 ```
 cdr_sync → cdr_copy → cdr_organize → cdr_load → cdr_publish
 ```
 
-## Зависимости
+## Dependencies
 
 - Python 3.8+
 - python-dotenv==1.0.0
