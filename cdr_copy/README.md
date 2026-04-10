@@ -30,6 +30,11 @@ python3 cdr_copy/cdr_copy.py telna_cdr --dry-run
 
 Конфигурационные задачи хранятся в `cdr_copy/config/<имя_задачи>.env`
 
+Для создания новой задачи:
+1. Скопируйте шаблон `cdr_copy/config/task.env.example`
+2. Переименуйте в `<имя_задачи>.env`
+3. Заполните параметры
+
 #### Пример конфигурации
 
 ```ini
@@ -40,14 +45,14 @@ to="/target/folder"
 # Опциональные фильтры
 company="ClientName"
 
-# Флаги (наличие параметра включает функцию)
--by_company     # Раскладывать файлы по папкам компаний
--flat           # Плоская структура из подпапок
--by_date        # Раскладывать файлы по папкам дат
+# Флаги структуры (yes/no)
+by_company=no
+flat=no
+by_date=no
 
-# Удобные флаги для быстрой фильтрации
--yesterday      # Только вчерашние файлы
--today          # Только сегодняшние файлы
+# Удобные флаги для быстрой фильтрации (yes/no)
+yesterday=no
+today=no
 
 # Диапазоны дат (формат YYYYMMDD)
 from_date="20260101"
@@ -74,41 +79,48 @@ to_date="20261231"
 
 ### Флаги структуры
 
-Флаги могут комбинироваться друг с другом:
+Флаги принимают значения `yes` или `no` и могут комбинироваться:
 
-- **-by_company** - Раскладывать файлы по папкам компаний
+- **by_company** - Раскладывать файлы по папкам компаний
   - Извлекает компанию из имени файла
   - Заменяет подчёркивания на пробелы
   - Пример: `LIVE_Telna_Corp_CDR_...` → `Telna Corp/`
+  - Значение: `yes` или `no`
 
-- **-by_date** - Раскладывать файлы по папкам дат
+- **by_date** - Раскладывать файлы по папкам дат
   - Извлекает дату из имени файла
   - Формат папки: YYYY-MM-DD
   - Пример: `2026-04-10/`
+  - Значение: `yes` или `no`
 
-- **-flat** - Плоская структура из подпапок
+- **flat** - Плоская структура из подпапок
   - Рекурсивно сканирует исходную папку
   - Копирует все файлы в целевую папку без сохранения структуры
+  - Значение: `yes` или `no`
 
 **Примеры комбинаций:**
 
 | Флаги | Результат |
 |-------|-----------|
-| Нет флагов | `to/filename.csv` |
-| `-by_company` | `to/Telna Corp/filename.csv` |
-| `-by_date` | `to/2026-04-10/filename.csv` |
-| `-by_company -by_date` | `to/Telna Corp/2026-04-10/filename.csv` |
-| `-flat` | `to/filename.csv` (из всех подпапок) |
+| Все `no` | `to/filename.csv` |
+| `by_company=yes` | `to/Telna Corp/filename.csv` |
+| `by_date=yes` | `to/2026-04-10/filename.csv` |
+| `by_company=yes by_date=yes` | `to/Telna Corp/2026-04-10/filename.csv` |
+| `flat=yes` | `to/filename.csv` (из всех подпапок) |
 
 ### Флаги фильтрации по дате
 
-- **-yesterday** - Только вчерашние файлы
+Флаги принимают значения `yes` или `no`:
+
+- **yesterday** - Только вчерашние файлы
   - Устанавливает from_date и to_date на вчерашний день
+  - Значение: `yes` или `no`
 
-- **-today** - Только сегодняшние файлы
+- **today** - Только сегодняшние файлы
   - Устанавливает from_date и to_date на сегодняшний день
+  - Значение: `yes` или `no`
 
-**Важно:** Нельзя использовать `-yesterday` и `-today` одновременно.
+**Важно:** Нельзя использовать `yesterday=yes` и `today=yes` одновременно.
 
 ### Диапазоны дат
 
@@ -139,7 +151,7 @@ python3 cdr_copy/cdr_copy.py telna_cdr
 ```ini
 from="/home/cdr_admin/incoming"
 to="/home/cdr_admin/processed"
--by_company
+by_company=yes
 ```
 
 Результат:
@@ -159,7 +171,7 @@ to="/home/cdr_admin/processed"
 ```ini
 from="/home/cdr_admin/incoming"
 to="/home/cdr_admin/archive"
--by_date
+by_date=yes
 ```
 
 Результат:
@@ -179,8 +191,8 @@ to="/home/cdr_admin/archive"
 ```ini
 from="/home/cdr_admin/incoming"
 to="/home/cdr_admin/organized"
--by_company
--by_date
+by_company=yes
+by_date=yes
 ```
 
 Результат:
@@ -204,7 +216,7 @@ to="/home/cdr_admin/organized"
 ```ini
 from="/home/cdr_admin/incoming/telna"
 to="/home/cdr_admin/flat"
--flat
+flat=yes
 ```
 
 Результат:
@@ -235,7 +247,7 @@ company="eData"
 ```ini
 from="/home/cdr_admin/incoming"
 to="/home/cdr_admin/yesterday"
--yesterday
+yesterday=yes
 ```
 
 Скопирует только файлы за вчерашний день.
@@ -306,7 +318,7 @@ sudo cp cdr_copy.logrotate /etc/logrotate.d/cdr_copy
 - Права на запись в целевую папку
 - Формат дат (YYYYMMDD)
 - Логику диапазона дат (from_date <= to_date)
-- Несовместимые флаги (-yesterday и -today)
+- Несовместимые флаги (yesterday=yes и today=yes)
 
 ### Коды возврата
 

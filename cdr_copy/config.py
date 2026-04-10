@@ -58,13 +58,13 @@ class CDRCopyConfig:
         from_date = env_values.get("from_date", "").strip().strip('"\'') or None
         to_date = env_values.get("to_date", "").strip().strip('"\'') or None
 
-        # Extract flags (parameters without values or with specific values)
+        # Extract flags (parameters with yes/no values)
         flags = {
-            "by_company": _is_flag_set(env_values, "-by_company"),
-            "flat": _is_flag_set(env_values, "-flat"),
-            "by_date": _is_flag_set(env_values, "-by_date"),
-            "yesterday": _is_flag_set(env_values, "-yesterday"),
-            "today": _is_flag_set(env_values, "-today"),
+            "by_company": _is_flag_enabled(env_values, "by_company"),
+            "flat": _is_flag_enabled(env_values, "flat"),
+            "by_date": _is_flag_enabled(env_values, "by_date"),
+            "yesterday": _is_flag_enabled(env_values, "yesterday"),
+            "today": _is_flag_enabled(env_values, "today"),
         }
 
         return cls(
@@ -142,10 +142,10 @@ class CDRCopyConfig:
         return from_date, to_date
 
 
-def _is_flag_set(env_values: dict, flag_name: str) -> bool:
-    """Check if a flag is set in .env values."""
-    # Flag is set if key exists in env_values
-    return flag_name in env_values
+def _is_flag_enabled(env_values: dict, flag_name: str) -> bool:
+    """Check if a flag is enabled in .env values."""
+    value = env_values.get(flag_name, "no").strip()
+    return value.lower() in {"yes", "true", "1", "on"}
 
 
 def _is_valid_date(date_str: str) -> bool:
