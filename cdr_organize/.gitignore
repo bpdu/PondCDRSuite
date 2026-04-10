@@ -1,3 +1,0 @@
-# Keep logs directory but ignore its contents
-logs/*
-!logs/.gitkeep

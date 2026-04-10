@@ -1,2 +1,0 @@
-# cdr_load requirements
-# Standard library only - no external dependencies needed
