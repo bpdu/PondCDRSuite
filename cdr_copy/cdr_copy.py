@@ -25,19 +25,30 @@ from config import CDRCopyConfig
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 LOG_DIR = os.path.join(SCRIPT_DIR, "logs")
-LOG_FILE = os.path.join(LOG_DIR, "cdr_copy.log")
 
 
-def setup_logger(dry_run: bool = False) -> logging.Logger:
-    """Setup logging configuration."""
+def get_log_filename(task_name: str) -> str:
+    """Generate dated log filename."""
+    date_suffix = datetime.now().strftime("%Y%m%d")
+    return os.path.join(LOG_DIR, f"{task_name}_{date_suffix}.log")
+
+
+LOG_FILE = os.path.join(LOG_DIR, "cdr_copy.log")  # Fallback, will be overridden
+
+
+def setup_logger(task_name: str, dry_run: bool = False) -> logging.Logger:
+    """Setup logging configuration with dated log file."""
     os.makedirs(LOG_DIR, exist_ok=True)
+
+    # Use dated log file
+    log_file = get_log_filename(task_name)
 
     logger = logging.getLogger("cdr_copy")
     logger.setLevel(logging.INFO)
     logger.handlers.clear()  # Clear existing handlers
 
     # File handler
-    file_handler = logging.FileHandler(LOG_FILE)
+    file_handler = logging.FileHandler(log_file)
     file_handler.setFormatter(
         logging.Formatter("%(asctime)s - %(message)s", "%Y-%m-%d %H:%M:%S")
     )
@@ -384,8 +395,8 @@ def main():
         print(f"Error: {error}", file=sys.stderr)
         sys.exit(1)
 
-    # Setup logger
-    logger = setup_logger(args.dry_run)
+    # Setup logger with dated log file
+    logger = setup_logger(args.task_name, args.dry_run)
 
     if args.dry_run:
         logger.info("DRY RUN MODE - no files will be copied")

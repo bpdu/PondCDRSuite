@@ -1,4 +1,4 @@
-/home/alexr/Dev/PondCDRSuite/cdr_copy/logs/cdr_copy.log {
+/home/cdr_admin/PondCDRSuite/cdr_copy/logs/*.log {
     daily
     rotate 7
     compress
