@@ -74,12 +74,12 @@ def get_file_type(filename: str) -> Optional[str]:
     return None
 
 
-def extract_company(filename: str) -> Optional[str]:
+def extract_company_raw(filename: str) -> Optional[str]:
     """
-    Extract company from filename.
+    Extract raw company name from filename without normalization.
 
     Pattern: LIVE_{Company}_CDR_... or LIVE_{Company}_LU_...
-    Returns company name normalized (underscores and spaces removed for consistent folder naming).
+    Returns company name with underscores replaced by spaces.
     """
     if not filename.startswith("LIVE_"):
         return None
@@ -95,9 +95,53 @@ def extract_company(filename: str) -> Optional[str]:
         company = after_prefix[:lu_pos]
 
     if company:
-        # Replace underscores with spaces first, then remove all spaces for consistent folder naming
-        return company.replace("_", " ").replace(" ", "")
+        # Replace underscores with spaces
+        return company.replace("_", " ")
     return None
+
+
+def normalize_company_name(company: str, all_normalized_companies: set) -> str:
+    """
+    Normalize company name for folder naming.
+
+    Rules:
+    - Remove all spaces and special characters (keep only alphanumeric)
+    - If removing "And"/"and"/"AND" results in a name that already exists, keep "And"
+    """
+    # First, try removing "And" (case insensitive, word boundary)
+    without_and = re.sub(r"\bAnd\b", "", company, flags=re.IGNORECASE)
+    normalized_without_and = "".join(c for c in without_and if c.isalnum())
+
+    # Check if this normalized name already exists in the set of already normalized companies
+    if normalized_without_and in all_normalized_companies:
+        # Keep "And", just normalize normally
+        normalized_with_and = "".join(c for c in company if c.isalnum())
+        return normalized_with_and
+    else:
+        # Safe to remove "And"
+        return normalized_without_and
+
+
+def extract_company(filename: str, normalized_companies: set = None) -> Optional[str]:
+    """
+    Extract company from filename with context-aware normalization.
+
+    Pattern: LIVE_{Company}_CDR_... or LIVE_{Company}_LU_...
+    Returns company name normalized for folder naming.
+
+    If normalized_companies set is provided, uses context-aware normalization for "And".
+    Otherwise, uses simple normalization (removes "And").
+    """
+    raw_company = extract_company_raw(filename)
+    if not raw_company:
+        return None
+
+    if normalized_companies is not None:
+        return normalize_company_name(raw_company, normalized_companies)
+    else:
+        # Fallback: simple normalization (remove "And")
+        company = re.sub(r"\bAnd\b", "", raw_company, flags=re.IGNORECASE)
+        return "".join(c for c in company if c.isalnum())
 
 
 def extract_date_from_filename(filename: str) -> Optional[str]:
@@ -120,7 +164,7 @@ def extract_date_from_filename(filename: str) -> Optional[str]:
 
 
 def should_process_file(
-    filename: str, source_path: str, config: CDRCopyConfig
+    filename: str, source_path: str, config: CDRCopyConfig, normalized_companies: set = None
 ) -> Tuple[bool, str]:
     """
     Check if file should be processed based on filters.
@@ -140,7 +184,7 @@ def should_process_file(
 
     # Check company filter
     if config.company:
-        company = extract_company(filename)
+        company = extract_company(filename, normalized_companies)
         if not company or config.company.lower() not in company.lower():
             return False, f"company mismatch (expected: {config.company})"
 
@@ -178,7 +222,7 @@ def normalize_csv_filename(filename: str) -> str:
 
 
 def build_dest_path(
-    source_path: str, filename: str, config: CDRCopyConfig
+    source_path: str, filename: str, config: CDRCopyConfig, normalized_companies: set = None
 ) -> Optional[str]:
     """
     Build destination path based on flags.
@@ -189,7 +233,7 @@ def build_dest_path(
 
     # Apply -by_company flag
     if config.flags["by_company"]:
-        company = extract_company(filename)
+        company = extract_company(filename, normalized_companies)
         if not company:
             return None
         dest_parts.append(company)
@@ -240,7 +284,7 @@ def copy_atomically(
 
 
 def process_file(
-    source_path: str, filename: str, config: CDRCopyConfig, logger: logging.Logger, dry_run: bool
+    source_path: str, filename: str, config: CDRCopyConfig, logger: logging.Logger, dry_run: bool, normalized_companies: set = None
 ) -> Tuple[str, int]:
     """
     Process a single file.
@@ -250,13 +294,13 @@ def process_file(
         status: "copied", "skipped", "error"
     """
     # Check if file should be processed
-    should_process, reason = should_process_file(filename, source_path, config)
+    should_process, reason = should_process_file(filename, source_path, config, normalized_companies)
     if not should_process:
         logger.info(f"SKIPPED {filename} ({reason})")
         return "skipped", 0
 
     # Build destination path
-    dest_path = build_dest_path(source_path, filename, config)
+    dest_path = build_dest_path(source_path, filename, config, normalized_companies)
     if not dest_path:
         if config.flags["by_company"] and config.flags["by_date"]:
             logger.info(f"SKIPPED {filename} (missing company or date in filename)")
@@ -309,23 +353,20 @@ def scan_directory(
 
     source_dir = config.from_path
 
+    # First pass: collect all raw company names for context-aware normalization
+    all_raw_companies = set()
+    files_to_process = []
+
     if config.flags["flat"]:
-        # Recursive scan with flat structure
+        # Recursive scan
         for root, dirs, files in os.walk(source_dir):
             for filename in files:
                 source_path = os.path.join(root, filename)
-                status, err = process_file(
-                    source_path, filename, config, logger, dry_run
-                )
-
-                if status == "copied":
-                    stats["copied"] += 1
-                    if dry_run:
-                        stats["dry_run_skipped"] += 1
-                elif status == "skipped":
-                    stats["skipped"] += 1
-                elif status == "error":
-                    stats["errors"] += err
+                files_to_process.append((source_path, filename))
+                # Extract raw company for context
+                raw_company = extract_company_raw(filename)
+                if raw_company:
+                    all_raw_companies.add(raw_company)
     else:
         # Non-recursive scan (top-level only)
         if not os.path.exists(source_dir):
@@ -338,8 +379,51 @@ def scan_directory(
             if not os.path.isfile(source_path):
                 continue
 
+            files_to_process.append((source_path, filename))
+            # Extract raw company for context
+            raw_company = extract_company_raw(filename)
+            if raw_company:
+                all_raw_companies.add(raw_company)
+
+    # Normalize all companies with context - iterative approach
+    normalized_companies = set()
+    for raw_company in all_raw_companies:
+        # Build temp set excluding current company to check for conflicts
+        temp_normalized = normalized_companies.copy()
+        # Try normalizing without "And"
+        without_and = re.sub(r"\bAnd\b", "", raw_company, flags=re.IGNORECASE)
+        normalized_without_and = "".join(c for c in without_and if c.isalnum())
+        
+        # Check if this normalized name already exists
+        if normalized_without_and in temp_normalized:
+            # Keep "And", just normalize normally
+            normalized_with_and = "".join(c for c in raw_company if c.isalnum())
+            normalized_companies.add(normalized_with_and)
+        else:
+            # Safe to remove "And"
+            normalized_companies.add(normalized_without_and)
+
+    # Second pass: process files with context-aware normalization
+    if config.flags["flat"]:
+        # Recursive scan with flat structure
+        for source_path, filename in files_to_process:
             status, err = process_file(
-                source_path, filename, config, logger, dry_run
+                source_path, filename, config, logger, dry_run, normalized_companies
+            )
+
+            if status == "copied":
+                stats["copied"] += 1
+                if dry_run:
+                    stats["dry_run_skipped"] += 1
+            elif status == "skipped":
+                stats["skipped"] += 1
+            elif status == "error":
+                stats["errors"] += err
+    else:
+        # Non-recursive scan (top-level only)
+        for source_path, filename in files_to_process:
+            status, err = process_file(
+                source_path, filename, config, logger, dry_run, normalized_companies
             )
 
             if status == "copied":
