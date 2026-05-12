@@ -17,6 +17,7 @@ import os
 import re
 import shutil
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple
@@ -47,19 +48,21 @@ def setup_logger(task_name: str, dry_run: bool = False) -> logging.Logger:
     logger.setLevel(logging.INFO)
     logger.handlers.clear()  # Clear existing handlers
 
+    formatter = logging.Formatter(
+        "%(asctime)s UTC - %(message)s",
+        "%Y-%m-%d %H:%M:%S",
+    )
+    formatter.converter = time.gmtime
+
     # File handler
     file_handler = logging.FileHandler(log_file)
-    file_handler.setFormatter(
-        logging.Formatter("%(asctime)s - %(message)s", "%Y-%m-%d %H:%M:%S")
-    )
+    file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
     # Console handler for dry-run mode
     if dry_run:
         console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(
-            logging.Formatter("%(asctime)s - %(message)s", "%Y-%m-%d %H:%M:%S")
-        )
+        console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
 
     return logger
@@ -291,7 +294,7 @@ def process_file(
 
     Returns:
         (status, error_count) tuple
-        status: "copied", "skipped", "error"
+        status: "copied", "skipped", "exists", "error"
     """
     # Check if file should be processed
     should_process, reason = should_process_file(filename, source_path, config, normalized_companies)
@@ -312,8 +315,7 @@ def process_file(
 
     # Check if file should be copied
     if not should_copy(source_path, dest_path):
-        logger.info(f"SKIPPED {filename} (already exists)")
-        return "skipped", 0
+        return "exists", 0
 
     # Create destination directories
     dest_dir = os.path.dirname(dest_path)
@@ -347,6 +349,7 @@ def scan_directory(
     stats = {
         "copied": 0,
         "skipped": 0,
+        "skipped_exists": 0,
         "errors": 0,
         "dry_run_skipped": 0 if dry_run else None,
     }
@@ -417,6 +420,9 @@ def scan_directory(
                     stats["dry_run_skipped"] += 1
             elif status == "skipped":
                 stats["skipped"] += 1
+            elif status == "exists":
+                stats["skipped"] += 1
+                stats["skipped_exists"] += 1
             elif status == "error":
                 stats["errors"] += err
     else:
@@ -432,6 +438,9 @@ def scan_directory(
                     stats["dry_run_skipped"] += 1
             elif status == "skipped":
                 stats["skipped"] += 1
+            elif status == "exists":
+                stats["skipped"] += 1
+                stats["skipped_exists"] += 1
             elif status == "error":
                 stats["errors"] += err
 
@@ -443,6 +452,7 @@ def log_summary(stats: dict, logger: logging.Logger):
     summary_parts = [
         f"copied={stats['copied']}",
         f"skipped={stats['skipped']}",
+        f"skipped_exists={stats['skipped_exists']}",
         f"errors={stats['errors']}",
     ]
 
