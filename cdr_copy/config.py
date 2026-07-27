@@ -24,6 +24,7 @@ class CDRCopyConfig:
     config_name: str
     from_path: str
     to_path: str
+    file_extensions: list[str] | None = None
     company: Optional[str] = None
     flags: dict | None = None
     from_date: Optional[str] = None
@@ -32,6 +33,8 @@ class CDRCopyConfig:
     def __post_init__(self):
         if self.flags is None:
             self.flags = {}
+        if self.file_extensions is None:
+            self.file_extensions = ["csv"]
 
     @classmethod
     def load(cls, config_name: str) -> "CDRCopyConfig":
@@ -54,6 +57,9 @@ class CDRCopyConfig:
             raise ValueError(f"Missing mandatory parameter 'to' in {config_path}")
 
         # Extract optional parameters
+        file_extensions_raw = env_values.get("file_extensions", "").strip().strip('"\'')
+        file_extensions = [ext.strip().lower().lstrip(".") for ext in file_extensions_raw.split(",") if ext.strip()] if file_extensions_raw else None
+
         company = env_values.get("company", "").strip().strip('"\'') or None
         from_date = env_values.get("from_date", "").strip().strip('"\'') or None
         to_date = env_values.get("to_date", "").strip().strip('"\'') or None
@@ -71,6 +77,7 @@ class CDRCopyConfig:
             config_name=config_name,
             from_path=from_path,
             to_path=to_path,
+            file_extensions=file_extensions,
             company=company,
             flags=flags,
             from_date=from_date,

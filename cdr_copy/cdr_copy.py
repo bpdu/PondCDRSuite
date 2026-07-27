@@ -175,10 +175,11 @@ def should_process_file(
     Returns:
         (should_process, reason) tuple
     """
-    # Check file extension (accept both .csv and csv without dot - Telna bug)
+    # Check file extension against allowed extensions from config
     fname_lower = filename.lower()
-    if not (fname_lower.endswith(".csv") or fname_lower.endswith("csv")):
-        return False, "not a CSV file"
+    allowed = config.file_extensions or ["csv"]
+    if not any(fname_lower.endswith(f".{ext}") or fname_lower.endswith(ext) for ext in allowed):
+        return False, f"not a CSV file (allowed: {', '.join(allowed)})"
 
     # Check file type
     file_type = get_file_type(filename)
