@@ -152,11 +152,11 @@ def extract_date_from_filename(filename: str, config: CDRCopyConfig = None) -> O
     Extract date from CDR/LU filename.
 
     Uses custom date_extract_pattern/date_extract_format from config if provided.
-    Falls back to standard Telna pattern: LIVE_{CLIENT}_{TYPE}_{YYYYMMDD}...
+    Falls back to standard patterns if custom pattern doesn't match.
 
     Returns: YYYY-MM-DD or None
     """
-    # Use custom pattern from config if provided
+    # Try custom pattern from config if provided
     if config and config.date_extract_pattern:
         match = re.search(config.date_extract_pattern, filename)
         if match:
@@ -166,18 +166,35 @@ def extract_date_from_filename(filename: str, config: CDRCopyConfig = None) -> O
                 dt = datetime.strptime(date_str, fmt)
                 return dt.strftime("%Y-%m-%d")
             except ValueError:
-                return None
-        return None
+                pass
 
-    # Default: Telna-style filenames (LIVE_*_CDR_YYYYMMDD... or LIVE_*_LU_YYYYMMDD...)
+    # Try standard Telna patterns
     match = re.search(r"_CDR_(\d{8})", filename) or re.search(r"_LU_(\d{8})", filename)
     if match:
-        date_str = match.group(1)  # YYYYMMDD
         try:
-            dt = datetime.strptime(date_str, "%Y%m%d")
-            return dt.strftime("%Y-%m-%d")  # YYYY-MM-DD
+            dt = datetime.strptime(match.group(1), "%Y%m%d")
+            return dt.strftime("%Y-%m-%d")
         except ValueError:
-            return None
+            pass
+
+    # Try DD_MM_YYYY pattern (Plintron SMS/VOICE .cdr files)
+    match = re.search(r"(\d{2})_(\d{2})_(\d{4})", filename)
+    if match:
+        try:
+            dt = datetime.strptime(f"{match.group(1)}_{match.group(2)}_{match.group(3)}", "%d_%m_%Y")
+            return dt.strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+
+    # Fallback: any 8 consecutive digits as YYYYMMDD
+    match = re.search(r"(\d{8})", filename)
+    if match:
+        try:
+            dt = datetime.strptime(match.group(1), "%Y%m%d")
+            return dt.strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+
     return None
 
 
