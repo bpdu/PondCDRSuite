@@ -147,14 +147,29 @@ def extract_company(filename: str, normalized_companies: set = None) -> Optional
         return "".join(c for c in company if c.isalnum())
 
 
-def extract_date_from_filename(filename: str) -> Optional[str]:
+def extract_date_from_filename(filename: str, config: CDRCopyConfig = None) -> Optional[str]:
     """
     Extract date from CDR/LU filename.
 
-    Pattern: LIVE_{CLIENT}_{TYPE}_{YYYYMMDD}...
-    Example: LIVE_Company1_CDR_20260406200000_1_20260406211103.csv
-    Returns: 2026-04-06
+    Uses custom date_extract_pattern/date_extract_format from config if provided.
+    Falls back to standard Telna pattern: LIVE_{CLIENT}_{TYPE}_{YYYYMMDD}...
+
+    Returns: YYYY-MM-DD or None
     """
+    # Use custom pattern from config if provided
+    if config and config.date_extract_pattern:
+        match = re.search(config.date_extract_pattern, filename)
+        if match:
+            date_str = match.group(1)
+            fmt = config.date_extract_format or "%Y%m%d"
+            try:
+                dt = datetime.strptime(date_str, fmt)
+                return dt.strftime("%Y-%m-%d")
+            except ValueError:
+                return None
+        return None
+
+    # Default: Telna-style filenames (LIVE_*_CDR_YYYYMMDD... or LIVE_*_LU_YYYYMMDD...)
     match = re.search(r"_CDR_(\d{8})", filename) or re.search(r"_LU_(\d{8})", filename)
     if match:
         date_str = match.group(1)  # YYYYMMDD
@@ -196,7 +211,7 @@ def should_process_file(
     # Check date range
     from_date, to_date = config.get_date_range()
     if from_date or to_date:
-        file_date = extract_date_from_filename(filename)
+        file_date = extract_date_from_filename(filename, config)
         if not file_date:
             return False, "no date in filename"
 
@@ -245,7 +260,7 @@ def build_dest_path(
 
     # Apply -by_date flag
     if config.flags["by_date"]:
-        date_str = extract_date_from_filename(filename)
+        date_str = extract_date_from_filename(filename, config)
         if not date_str:
             return None
         dest_parts.append(date_str)

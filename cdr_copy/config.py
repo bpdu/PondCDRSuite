@@ -26,6 +26,8 @@ class CDRCopyConfig:
     to_path: str
     file_extensions: list[str] | None = None
     skip_type_check: bool = False
+    date_extract_pattern: Optional[str] = None
+    date_extract_format: Optional[str] = None
     company: Optional[str] = None
     flags: dict | None = None
     from_date: Optional[str] = None
@@ -63,6 +65,9 @@ class CDRCopyConfig:
 
         skip_type_check = _is_flag_enabled(env_values, "skip_type_check")
 
+        date_extract_pattern = env_values.get("date_extract_pattern", "").strip().strip('"\'') or None
+        date_extract_format = env_values.get("date_extract_format", "").strip().strip('"\'') or None
+
         company = env_values.get("company", "").strip().strip('"\'') or None
         from_date = env_values.get("from_date", "").strip().strip('"\'') or None
         to_date = env_values.get("to_date", "").strip().strip('"\'') or None
@@ -82,6 +87,8 @@ class CDRCopyConfig:
             to_path=to_path,
             file_extensions=file_extensions,
             skip_type_check=skip_type_check,
+            date_extract_pattern=date_extract_pattern,
+            date_extract_format=date_extract_format,
             company=company,
             flags=flags,
             from_date=from_date,
