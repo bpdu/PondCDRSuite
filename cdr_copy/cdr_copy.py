@@ -181,10 +181,11 @@ def should_process_file(
     if not any(fname_lower.endswith(f".{ext}") or fname_lower.endswith(ext) for ext in allowed):
         return False, f"not a CSV file (allowed: {', '.join(allowed)})"
 
-    # Check file type
-    file_type = get_file_type(filename)
-    if not file_type:
-        return False, "not a CDR or LU file"
+    # Check file type (can be skipped for providers with non-standard naming)
+    if not config.skip_type_check:
+        file_type = get_file_type(filename)
+        if not file_type:
+            return False, "not a CDR or LU file"
 
     # Check company filter
     if config.company:

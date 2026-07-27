@@ -220,3 +220,6 @@ cdr_sync/.env
 cdr_notify/*.db
 cdr_notify/*.db-*
 *.bak\n*.working\ncdr_tmp.sh
+
+# Project reports
+report/
