@@ -166,7 +166,12 @@ def extract_date_from_filename(filename: str, config: CDRCopyConfig = None) -> O
                 dt = datetime.strptime(date_str, fmt)
                 return dt.strftime("%Y-%m-%d")
             except ValueError:
-                pass
+                if len(date_str) > 8:
+                    try:
+                        dt = datetime.strptime(date_str[:8], "%Y%m%d")
+                        return dt.strftime("%Y-%m-%d")
+                    except ValueError:
+                        pass
 
     # Try standard Telna patterns
     match = re.search(r"_CDR_(\d{8})", filename) or re.search(r"_LU_(\d{8})", filename)
