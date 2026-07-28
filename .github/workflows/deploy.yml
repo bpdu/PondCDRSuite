@@ -118,6 +118,22 @@ jobs:
               echo "  ✓ send_alert.py is executable"
             fi
 
+            # Install logrotate configs
+            echo ""
+            echo "=========================================="
+            echo "🔄 Logrotate"
+            echo "=========================================="
+
+            if [ -f "cdr_sync/logrotate.conf" ]; then
+              sudo cp cdr_sync/logrotate.conf /etc/logrotate.d/cdr_sync
+              echo "  ✓ cdr_sync logrotate installed"
+            fi
+
+            if [ -f "cdr_copy/cdr_copy.logrotate" ]; then
+              sudo cp cdr_copy/cdr_copy.logrotate /etc/logrotate.d/cdr_copy
+              echo "  ✓ cdr_copy logrotate installed"
+            fi
+
             # Check cron status
             echo ""
             echo "=========================================="
