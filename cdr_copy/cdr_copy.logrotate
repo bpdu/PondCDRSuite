@@ -1,6 +1,6 @@
 /home/cdr_admin/PondCDRSuite/cdr_copy/logs/*.log {
     daily
-    rotate 7
+    rotate 3
     compress
     delaycompress
     missingok
