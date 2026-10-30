@@ -50,8 +50,10 @@ jobs:
             if [ -d "$DEPLOY_DIR" ]; then
               echo "EXISTS"
             else
-              echo "❌ NOT FOUND"
+              echo "NOT FOUND — creating..."
+              mkdir -p "$DEPLOY_DIR" || echo "ERROR: cannot create $DEPLOY_DIR"
               exit 1
+              echo "  ✓ Deploy directory created: $DEPLOY_DIR"
             fi
 
             echo ""
