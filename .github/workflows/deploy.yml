@@ -128,11 +128,14 @@ jobs:
               echo "  ✓ send_alert.py is executable"
             fi
 
+            # Fixing ownership"
+            echo ""
             echo "=========================================="
-            echo " Fixing ownership"
+            echo "Fixing ownership of TARGET_DIR"
             echo "=========================================="
-            sudo chown -R cdr_admin:cdr_admin "$DEPLOY_DIR" || { echo " WARNING: chown failed (check sudoers on the server)" }
-            echo "Ownership set to cdr_admin:cdr_admin"
+
+            sudo chown -R cdr_admin:github-deploy "$DEPLOY_DIR" || echo "WARNING: chown failed (check sudoers on the server)"
+            echo "Ownership set"
 
             # Check cron status
             echo ""
