@@ -61,37 +61,50 @@ jobs:
 
             cd "$DEPLOY_DIR" || exit 1
 
-            # Check if .git exists
+            # Check if .git exists; if not, clone the repo
             if [ ! -d ".git" ]; then
-              echo "ERROR: Not a git repository"
-              exit 1
+              echo "  ⚠️  Not a git repository. Cloning from origin..."
+
+              # If directory is not empty, move existing files to a backup location
+              if [ -n "$(ls -A .)" ]; then
+                BACKUP_DIR="/tmp/PondCDRSuite_backup_$(date +%s)"
+                echo "  ⚠️  Directory is not empty. Moving existing files to $BACKUP_DIR"
+                mkdir -p "$BACKUP_DIR"
+                mv * .[!.]* "$BACKUP_DIR"/ 2>/dev/null || true
+              fi
+
+              # Clone the repository into the current directory
+              git clone "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" . || {
+                echo "ERROR: git clone failed"
+                exit 1
+              }
+              echo "  ✓ Repository cloned"
+            else
+              # Repository already exists — update it
+              echo "  → Stashing local changes..."
+              git stash push -u -m "Deploy stash $VERSION" \
+                -- '*.env' \
+                'cdr_sync/configs/*' \
+                'cdr_sync/logs/*' \
+                2>&1 || echo "  (nothing to stash)"
+
+              echo "  → Fetching origin..."
+              git fetch origin 2>&1 || {
+                echo "ERROR: git fetch failed"
+                exit 1
+              }
+
+              echo "  → Resetting to origin/main..."
+              git reset --hard origin/main 2>&1 || {
+                echo "ERROR: git reset failed"
+                exit 1
+              }
+
+              echo "  → Restoring stashed files..."
+              git stash pop 2>&1 || echo "  (no stash to restore)"
+
+              echo "  ✓ Repository updated"
             fi
-
-            # Stash local changes before pull
-            echo ""
-            echo "  → Stashing local changes..."
-            git stash push -u -m "Deploy stash $VERSION" \
-              -- '*.env' \
-              'cdr_sync/configs/*' \
-              'cdr_sync/logs/*' \
-              2>&1 || echo "  (nothing to stash)"
-
-            echo "  → Fetching origin..."
-            git fetch origin 2>&1 || {
-              echo "ERROR: git fetch failed"
-              exit 1
-            }
-
-            echo "  → Resetting to origin/main..."
-            git reset --hard origin/main 2>&1 || {
-              echo "ERROR: git reset failed"
-              exit 1
-            }
-
-            echo "  → Restoring stashed files..."
-            git stash pop 2>&1 || echo "  (no stash to restore)"
-
-            echo "  ✓ Repository updated"
 
             # Show current commit
             echo ""
