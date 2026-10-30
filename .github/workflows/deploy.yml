@@ -60,6 +60,7 @@ jobs:
             echo "=========================================="
 
             cd "$DEPLOY_DIR" || exit 1
+            git config --global --add safe.directory "$DEPLOY_DIR"
 
             # Check if .git exists; if not, clone the repo
             if [ ! -d ".git" ]; then
