@@ -1,9 +1,6 @@
 name: Deploy to Production
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
@@ -28,7 +25,7 @@ jobs:
           script: |
             set -e
 
-            DEPLOY_DIR="/home/cdr_admin/PondCDRSuite"
+            DEPLOY_DIR="${{ secrets.CDR_SYNC_SERVER_TARGET_DIR }}"
             VERSION="${{ steps.sha.outputs.short_sha }}"
 
             echo "=========================================="
@@ -77,7 +74,6 @@ jobs:
               -- '*.env' \
               'cdr_sync/configs/*' \
               'cdr_sync/logs/*' \
-              'deploy/telna_sync.sh' \
               2>&1 || echo "  (nothing to stash)"
 
             echo "  → Fetching origin..."
