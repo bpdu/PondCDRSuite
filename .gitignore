@@ -215,7 +215,7 @@ __marimo__/
 CLAUDE.md
 
 # PondCDRSuite specific
-cdr_sync/configs/*.env
+cdr_sync/config/*.env
 cdr_sync/.env
 cdr_notify/*.db
 cdr_notify/*.db-*

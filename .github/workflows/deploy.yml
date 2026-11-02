@@ -87,7 +87,7 @@ jobs:
               echo "  → Stashing local changes..."
               git stash push -u -m "Deploy stash $VERSION" \
                 -- '*.env' \
-                'cdr_sync/configs/*' \
+                'cdr_sync/config/*' \
                 'cdr_sync/logs/*' \
                 2>&1 || echo "  (nothing to stash)"
 

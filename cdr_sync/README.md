@@ -47,8 +47,8 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env with your Telegram/Email notification settings
 
-cp configs/client_example.env.example configs/client_a.env
-# Edit configs/client_a.env with your SFTP credentials
+cp config/client_example.env.example config/client_a.env
+# Edit config/client_a.env with your SFTP credentials
 
 # Make scripts executable
 chmod +x cdr_sync.sh send_alert.py
@@ -73,7 +73,7 @@ EMAIL_FROM=notify@yourcompany.com
 EMAIL_TO=admin@yourcompany.com
 ```
 
-### Operation config (configs/*.env)
+### Operation config (config/*.env)
 
 Each SFTP connection has its own config file:
 
@@ -105,10 +105,10 @@ SEND_EMAIL=false         # Enable email alerts for this client
 ./cdr_sync.sh <pull|push> <config_file>
 
 # Download files from remote server
-./cdr_sync.sh pull configs/client_a.env
+./cdr_sync.sh pull config/client_a.env
 
 # Upload files to remote server
-./cdr_sync.sh push configs/client_c.env
+./cdr_sync.sh push config/client_c.env
 ```
 
 ### Understanding Pull vs Push
@@ -163,16 +163,16 @@ Add entries to user crontab or `/etc/cron.d/cdr_sync`:
 
 ```cron
 # Pull from client_a every hour at :00
-0 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull configs/client_a.env >> /dev/null 2>&1
+0 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull config/client_a.env >> /dev/null 2>&1
 
 # Push to client_b every hour at :10
-10 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh push configs/client_b.env >> /dev/null 2>&1
+10 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh push config/client_b.env >> /dev/null 2>&1
 
 # Multiple pulls and pushes with different schedules
-*/15 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull configs/client_a.env >> /dev/null 2>&1
-30 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull configs/client_b.env >> /dev/null 2>&1
-0 */4 * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh push configs/client_c.env >> /dev/null 2>&1
-0 0 * * 6,0 cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh push configs/client_d.env >> /dev/null 2>&1
+*/15 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull config/client_a.env >> /dev/null 2>&1
+30 * * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh pull config/client_b.env >> /dev/null 2>&1
+0 */4 * * * cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh push config/client_c.env >> /dev/null 2>&1
+0 0 * * 6,0 cd /path/to/PondCDRSuite/cdr_sync && ./cdr_sync.sh push config/client_d.env >> /dev/null 2>&1
 ```
 
 ## Log Rotation

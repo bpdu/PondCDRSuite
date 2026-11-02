@@ -33,8 +33,8 @@ usage() {
     echo "  config_file  Path to .env config file with connection settings"
     echo ""
     echo "Examples:"
-    echo "  $0 pull configs/telna.env"
-    echo "  $0 push configs/client_acme.env"
+    echo "  $0 pull config/telna.env"
+    echo "  $0 push config/client_acme.env"
     exit 1
 }
 

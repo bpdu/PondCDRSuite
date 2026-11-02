@@ -1,7 +1,7 @@
 # Secrets
 .env
-configs/*.env
-!configs/*.env.example
+config/*.env
+!config/*.env.example
 
 # Logs
 logs/*.log
