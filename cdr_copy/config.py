@@ -41,8 +41,19 @@ class CDRCopyConfig:
 
     @classmethod
     def load(cls, config_name: str) -> "CDRCopyConfig":
-        """Load configuration from .env file."""
-        config_path = os.path.join(CONFIG_DIR, f"{config_name}.env")
+        """Load configuration from .env file.
+
+        Accepts either a task name (e.g. 'telna_cdr') or a path to a
+        .env config file (e.g. 'config/telna_cdr.env').
+        """
+        if os.path.splitext(config_name)[1] == ".env":
+            config_path = config_name
+            if not os.path.isabs(config_path) and not os.path.exists(config_path):
+                config_path = os.path.join(CONFIG_DIR, config_name)
+            base_name = os.path.splitext(os.path.basename(config_path))[0]
+        else:
+            config_path = os.path.join(CONFIG_DIR, f"{config_name}.env")
+            base_name = config_name
 
         if not os.path.exists(config_path):
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
@@ -82,7 +93,7 @@ class CDRCopyConfig:
         }
 
         return cls(
-            config_name=config_name,
+            config_name=base_name,
             from_path=from_path,
             to_path=to_path,
             file_extensions=file_extensions,

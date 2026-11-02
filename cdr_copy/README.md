@@ -16,14 +16,14 @@ pip install -r requirements.txt
 
 ```bash
 # Direct Python call
-python3 cdr_copy/cdr_copy.py <task_name>
+python3 cdr_copy/cdr_copy.py <task_name>.env
 
 # With dry-run mode
-python3 cdr_copy/cdr_copy.py <task_name> --dry-run
+python3 cdr_copy/cdr_copy.py <task_name>.env --dry-run
 
 # Examples
-python3 cdr_copy/cdr_copy.py telna_cdr
-python3 cdr_copy/cdr_copy.py telna_cdr --dry-run
+python3 cdr_copy/cdr_copy.py config/telna_cdr.env
+python3 cdr_copy/cdr_copy.py config/telna_cdr.env --dry-run
 ```
 
 ### Configuration files
@@ -141,7 +141,13 @@ to="/home/cdr_admin/outbound/telna"
 Run:
 
 ```bash
-python3 cdr_copy/cdr_copy.py telna_cdr
+python3 cdr_copy/cdr_copy.py config/telna_cdr.env
+```
+
+### Cron usage
+
+```bash
+18 * * * * cdr_admin /usr/bin/python3 /PondCDRSuite/cdr_copy/cdr_copy.py /PondCDRSuite/cdr_copy/config/telna_cdr.env &>/dev/null
 ```
 
 ### Example 2: Sort by companies
@@ -270,7 +276,7 @@ Will copy only files from Q1 2026.
 Preview mode without actual copying:
 
 ```bash
-python3 cdr_copy/cdr_copy.py telna_cdr --dry-run
+python3 cdr_copy/cdr_copy.py config/telna_cdr.env --dry-run
 ```
 
 Output:

@@ -3,7 +3,7 @@
 cdr_copy - Copy CDR/LU files based on configuration rules.
 
 Usage:
-    python3 cdr_copy.py <task_name> [--dry-run]
+    python3 cdr_copy.py <task_name>.env [--dry-run]
 
 Example:
     python3 cdr_copy.py telna_cdr
@@ -506,7 +506,10 @@ def main():
     parser = argparse.ArgumentParser(
         description="Copy CDR/LU files based on configuration rules"
     )
-    parser.add_argument("task_name", help="Name of the task configuration")
+    parser.add_argument(
+        "task_name",
+        help="Name of the task configuration or path to its .env file",
+    )
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -529,7 +532,7 @@ def main():
         sys.exit(1)
 
     # Setup logger with dated log file
-    logger = setup_logger(args.task_name, args.dry_run)
+    logger = setup_logger(config.config_name, args.dry_run)
 
     if args.dry_run:
         logger.info("DRY RUN MODE - no files will be copied")
