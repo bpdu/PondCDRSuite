@@ -152,11 +152,15 @@ jobs:
             echo "=========================================="
 
             if [ -f "cdr_sync/cdr_sync.sh" ]; then
-              chmod +x cdr_sync/cdr_sync.sh || echo "  ⚠️  chmod failed for cdr_sync.sh (check ownership)"
+              chmod +x cdr_sync/cdr_sync.sh && echo "  ✓ cdr_sync.sh is executable" || echo "  ⚠️  chmod failed for cdr_sync.sh (check ownership)"
+            else
+              echo "  ⚠️  cdr_sync/cdr_sync.sh not found"
             fi
 
             if [ -f "cdr_sync/send_alert.py" ]; then
-              chmod +x cdr_sync/send_alert.py || echo "  ⚠️  chmod failed for send_alert.py (check ownership)"
+              chmod +x cdr_sync/send_alert.py && echo "  ✓ send_alert.py is executable" || echo "  ⚠️  chmod failed for send_alert.py (check ownership)"
+            else
+              echo "  ⚠️  cdr_sync/send_alert.py not found"
             fi
 
             # Generate logrotate configs for cdr_copy and cdr_sync
