@@ -177,13 +177,15 @@ Add entries to user crontab or `/etc/cron.d/cdr_sync`:
 
 ## Log Rotation
 
-Install logrotate configuration:
+Logrotate configuration is generated automatically during deployment
+from the repository-level `logrotate.template` and installed to
+`/etc/logrotate.d/cdr_sync`. Manual setup:
 
 ```bash
-# Edit logrotate.conf and replace /path/to with your installation directory
-# Replace username:groupname with your user:group
-
-sudo cp logrotate.conf /etc/logrotate.d/cdr_sync
+# Generate config from template (replace placeholders first)
+sed -e "s|__LOG_DIR__|/PondCDRSuite/cdr_sync/logs|g" \
+    -e "s|__DEPLOY_USER__|cdr_admin|g" \
+    ../logrotate.template | sudo tee /etc/logrotate.d/cdr_sync > /dev/null
 
 # Test configuration
 sudo logrotate -d /etc/logrotate.d/cdr_sync
@@ -193,5 +195,5 @@ sudo logrotate -f /etc/logrotate.d/cdr_sync
 ```
 
 Rotation policy:
-- Text logs (`.log`): 30 days retention, compressed
-- JSON logs (`.json`): 90 days retention, compressed
+- Text logs (`.log`): 3 days retention, compressed
+- JSON logs (`.json`): 3 days retention, compressed

@@ -303,14 +303,18 @@ Log files are stored in `cdr_copy/logs/cdr_copy.log`.
 
 ### Log rotation
 
-To configure rotation, use logrotate:
+Logrotate configuration is generated automatically during deployment
+from the repository-level `logrotate.template` and installed to
+`/etc/logrotate.d/cdr_copy`. Manual setup:
 
 ```bash
-# Install logrotate configuration
-sudo cp cdr_copy.logrotate /etc/logrotate.d/cdr_copy
+# Generate config from template (replace placeholders first)
+sed -e "s|__LOG_DIR__|/PondCDRSuite/cdr_copy/logs|g" \
+    -e "s|__DEPLOY_USER__|cdr_admin|g" \
+    ../logrotate.template | sudo tee /etc/logrotate.d/cdr_copy > /dev/null
 ```
 
-Configuration stores 7 days of logs with compression.
+Configuration stores 3 days of logs with compression.
 
 ## Error handling
 

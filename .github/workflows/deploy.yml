@@ -26,6 +26,7 @@ jobs:
             set -e
 
             DEPLOY_DIR="${{ secrets.CDR_SYNC_SERVER_TARGET_DIR }}"
+            DEPLOY_USER="${{ secrets.CDR_SYNC_SERVER_USER }}"
             VERSION="${{ steps.sha.outputs.short_sha }}"
 
             echo "=========================================="
@@ -51,8 +52,10 @@ jobs:
               echo "EXISTS"
             else
               echo "NOT FOUND — creating..."
-              mkdir -p "$DEPLOY_DIR" || echo "ERROR: cannot create $DEPLOY_DIR"
-              exit 1
+              if ! mkdir -p "$DEPLOY_DIR"; then
+                echo "ERROR: cannot create $DEPLOY_DIR"
+                exit 1
+              fi
               echo "  ✓ Deploy directory created: $DEPLOY_DIR"
             fi
 
@@ -121,13 +124,36 @@ jobs:
             echo "=========================================="
 
             if [ -f "cdr_sync/cdr_sync.sh" ]; then
-              chmod +x cdr_sync/cdr_sync.sh
-              echo "  ✓ cdr_sync.sh is executable"
+              chmod +x cdr_sync/cdr_sync.sh || echo "  ⚠️  chmod failed for cdr_sync.sh (check ownership)"
             fi
 
             if [ -f "cdr_sync/send_alert.py" ]; then
-              chmod +x cdr_sync/send_alert.py
-              echo "  ✓ send_alert.py is executable"
+              chmod +x cdr_sync/send_alert.py || echo "  ⚠️  chmod failed for send_alert.py (check ownership)"
+            fi
+
+            # Generate logrotate configs for cdr_copy and cdr_sync
+            echo ""
+            echo "=========================================="
+            echo "🔄 Configuring logrotate"
+            echo "=========================================="
+
+            if [ -f "logrotate.template" ]; then
+              for project in cdr_copy cdr_sync; do
+                LOG_DIR="$DEPLOY_DIR/$project/logs"
+                TARGET_CONF="/etc/logrotate.d/$project"
+
+                mkdir -p "$LOG_DIR" || true
+
+                sed -e "s|__LOG_DIR__|$LOG_DIR|g" \
+                    -e "s|__DEPLOY_USER__|$DEPLOY_USER|g" \
+                  "logrotate.template" \
+                  | sudo tee "$TARGET_CONF" > /dev/null
+
+                echo "  ✓ $TARGET_CONF configured for $LOG_DIR (user: $DEPLOY_USER)"
+                sudo logrotate -d "$TARGET_CONF" 2>&1 | head -3
+              done
+            else
+              echo "  ⚠️  logrotate.template not found, skipping"
             fi
 
             # Check cron status
@@ -141,6 +167,11 @@ jobs:
             else
               echo "  ⚠️  Cron service is not running"
             fi
+
+            # Disk usage check
+            echo ""
+            echo "💾 Disk usage:"
+            df -h /
 
             echo ""
             echo "=========================================="
