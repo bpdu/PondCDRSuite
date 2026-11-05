@@ -24,6 +24,9 @@ python3 cdr_copy/cdr_copy.py <task_name>.env --dry-run
 # Examples
 python3 cdr_copy/cdr_copy.py config/telna_cdr.env
 python3 cdr_copy/cdr_copy.py config/telna_cdr.env --dry-run
+
+# Verbose mode (log each skipped file, for diagnostics)
+python3 cdr_copy/cdr_copy.py config/telna_cdr.env --verbose
 ```
 
 ### Configuration files
@@ -290,16 +293,33 @@ Output:
 
 ## Logging
 
-Log files are stored in `cdr_copy/logs/cdr_copy.log`.
+Log files are stored in `cdr_copy/logs/<task_name>_<YYYYMMDD>.log`
+(one file per task per day).
+
+By default, skipped files are **not** logged individually — only aggregated
+counters per skip reason. This keeps daily logs at a few kilobytes even when
+scanning directories with hundreds of thousands of foreign files.
 
 ### Log format
 
 ```
 2026-04-10 15:30:45 - COPIED LIVE_Telna_CDR_20260410...
-2026-04-10 15:30:46 - SKIPPED LIVE_Client_LU_... (exists)
 2026-04-10 15:30:47 - ERROR LIVE_... : Permission denied
 2026-04-10 15:30:48 - RUN SUMMARY: copied=10 skipped=5 errors=0
+2026-04-10 15:30:48 - SKIP REASONS: 3x company mismatch (expected: Telna)
+2026-04-10 15:30:48 - SKIP REASONS: 2x file date ... before from_date
 ```
+
+### Verbose mode
+
+To log every skipped file individually (useful for one-off diagnostics):
+
+```bash
+python3 cdr_copy/cdr_copy.py <task_name>.env --verbose
+```
+
+Note: verbose mode can produce very large logs on directories with many
+non-matching files. Use it for a single run, not in cron.
 
 ### Log rotation
 

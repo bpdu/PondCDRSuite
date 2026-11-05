@@ -3,11 +3,12 @@
 cdr_copy - Copy CDR/LU files based on configuration rules.
 
 Usage:
-    python3 cdr_copy.py <task_name>.env [--dry-run]
+    python3 cdr_copy.py <task_name>.env [--dry-run] [--verbose]
 
 Example:
     python3 cdr_copy.py telna_cdr
     python3 cdr_copy.py telna_cdr --dry-run
+    python3 cdr_copy.py telna_cdr --verbose
 """
 from __future__ import annotations
 
@@ -326,35 +327,39 @@ def copy_atomically(
 
 
 def process_file(
-    source_path: str, filename: str, config: CDRCopyConfig, logger: logging.Logger, dry_run: bool, normalized_companies: set = None
+    source_path: str, filename: str, config: CDRCopyConfig, logger: logging.Logger, dry_run: bool, normalized_companies: set = None, verbose: bool = False
 ) -> Tuple[str, int]:
     """
     Process a single file.
 
     Returns:
-        (status, error_count) tuple
+        (status, error_count, reason) tuple
         status: "copied", "skipped", "exists", "error"
+        reason: skip reason string (empty if not skipped)
     """
     # Check if file should be processed
     should_process, reason = should_process_file(filename, source_path, config, normalized_companies)
     if not should_process:
-        logger.info(f"SKIPPED {filename} ({reason})")
-        return "skipped", 0
+        if verbose:
+            logger.info(f"SKIPPED {filename} ({reason})")
+        return "skipped", 0, reason
 
     # Build destination path
     dest_path = build_dest_path(source_path, filename, config, normalized_companies)
     if not dest_path:
         if config.flags["by_company"] and config.flags["by_date"]:
-            logger.info(f"SKIPPED {filename} (missing company or date in filename)")
+            reason = "missing company or date in filename"
         elif config.flags["by_company"]:
-            logger.info(f"SKIPPED {filename} (missing company in filename)")
+            reason = "missing company in filename"
         elif config.flags["by_date"]:
-            logger.info(f"SKIPPED {filename} (missing date in filename)")
-        return "skipped", 0
+            reason = "missing date in filename"
+        if verbose:
+            logger.info(f"SKIPPED {filename} ({reason})")
+        return "skipped", 0, reason
 
     # Check if file should be copied
     if not should_copy(source_path, dest_path):
-        return "exists", 0
+        return "exists", 0, ""
 
     # Create destination directories
     dest_dir = os.path.dirname(dest_path)
@@ -362,7 +367,7 @@ def process_file(
         os.makedirs(dest_dir, exist_ok=True)
     except Exception as e:
         logger.error(f"ERROR {filename}: cannot create directory: {e}")
-        return "error", 1
+        return "error", 1, ""
 
     # Copy file
     try:
@@ -371,14 +376,14 @@ def process_file(
         else:
             copy_atomically(source_path, dest_path, dry_run)
             logger.info(f"COPIED {filename}")
-        return "copied", 0
+        return "copied", 0, ""
     except Exception as e:
         logger.error(f"ERROR {filename}: {e}")
-        return "error", 1
+        return "error", 1, ""
 
 
 def scan_directory(
-    config: CDRCopyConfig, logger: logging.Logger, dry_run: bool
+    config: CDRCopyConfig, logger: logging.Logger, dry_run: bool, verbose: bool = False
 ) -> dict:
     """
     Scan source directory and process files.
@@ -390,6 +395,7 @@ def scan_directory(
         "skipped": 0,
         "skipped_exists": 0,
         "errors": 0,
+        "skipped_reasons": {},
         "dry_run_skipped": 0 if dry_run else None,
     }
 
@@ -446,42 +452,24 @@ def scan_directory(
             normalized_companies.add(normalized_without_and)
 
     # Second pass: process files with context-aware normalization
-    if config.flags["flat"]:
-        # Recursive scan with flat structure
-        for source_path, filename in files_to_process:
-            status, err = process_file(
-                source_path, filename, config, logger, dry_run, normalized_companies
-            )
+    for source_path, filename in files_to_process:
+        status, err, reason = process_file(
+            source_path, filename, config, logger, dry_run, normalized_companies, verbose
+        )
 
-            if status == "copied":
-                stats["copied"] += 1
-                if dry_run:
-                    stats["dry_run_skipped"] += 1
-            elif status == "skipped":
-                stats["skipped"] += 1
-            elif status == "exists":
-                stats["skipped"] += 1
-                stats["skipped_exists"] += 1
-            elif status == "error":
-                stats["errors"] += err
-    else:
-        # Non-recursive scan (top-level only)
-        for source_path, filename in files_to_process:
-            status, err = process_file(
-                source_path, filename, config, logger, dry_run, normalized_companies
-            )
-
-            if status == "copied":
-                stats["copied"] += 1
-                if dry_run:
-                    stats["dry_run_skipped"] += 1
-            elif status == "skipped":
-                stats["skipped"] += 1
-            elif status == "exists":
-                stats["skipped"] += 1
-                stats["skipped_exists"] += 1
-            elif status == "error":
-                stats["errors"] += err
+        if status == "copied":
+            stats["copied"] += 1
+            if dry_run:
+                stats["dry_run_skipped"] += 1
+        elif status == "skipped":
+            stats["skipped"] += 1
+            if reason:
+                stats["skipped_reasons"][reason] = stats["skipped_reasons"].get(reason, 0) + 1
+        elif status == "exists":
+            stats["skipped"] += 1
+            stats["skipped_exists"] += 1
+        elif status == "error":
+            stats["errors"] += err
 
     return stats
 
@@ -501,6 +489,10 @@ def log_summary(stats: dict, logger: logging.Logger):
     summary = "RUN SUMMARY: " + " ".join(summary_parts)
     logger.info(summary)
 
+    if stats["skipped_reasons"]:
+        for reason, count in sorted(stats["skipped_reasons"].items(), key=lambda item: -item[1]):
+            logger.info(f"SKIP REASONS: {count}x {reason}")
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -514,6 +506,11 @@ def main():
         "--dry-run",
         action="store_true",
         help="Preview changes without copying files",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Log each skipped file individually (otherwise only summary counters)",
     )
 
     args = parser.parse_args()
@@ -538,7 +535,7 @@ def main():
         logger.info("DRY RUN MODE - no files will be copied")
 
     # Scan and process
-    stats = scan_directory(config, logger, args.dry_run)
+    stats = scan_directory(config, logger, args.dry_run, args.verbose)
 
     # Log summary
     log_summary(stats, logger)
