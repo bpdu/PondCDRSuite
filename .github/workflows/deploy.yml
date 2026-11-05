@@ -67,16 +67,51 @@ jobs:
             cd "$DEPLOY_DIR" || exit 1
             git config --global --add safe.directory "$DEPLOY_DIR"
 
+            # ---- Credentials backup ----
+            # Task configs (cdr_copy/config/*.env, cdr_sync/config/*.env) hold
+            # unique credentials and exist only on the server (git-ignored).
+            # They must survive any deploy outcome: success, git failure or abort.
+            CRED_BACKUP_DIR="/tmp/pondcdrsuite_config_backup_$$"
+            mkdir -p "$CRED_BACKUP_DIR"
+
+            backup_configs() {
+              for cfg_dir in cdr_copy/config cdr_sync/config; do
+                if [ -d "$cfg_dir" ]; then
+                  mkdir -p "$CRED_BACKUP_DIR/$cfg_dir"
+                  find "$cfg_dir" -maxdepth 1 -name '*.env' -not -name '*.example' \
+                    -exec cp -p {} "$CRED_BACKUP_DIR/$cfg_dir/" \; || true
+                fi
+              done
+            }
+
+            restore_configs() {
+              for cfg_dir in cdr_copy/config cdr_sync/config; do
+                if [ -d "$CRED_BACKUP_DIR/$cfg_dir" ]; then
+                  cp -p "$CRED_BACKUP_DIR/$cfg_dir"/*.env "$cfg_dir/" 2>/dev/null || true
+                fi
+              done
+              rm -rf "$CRED_BACKUP_DIR"
+            }
+
+            backup_configs
+            if [ -n "$(find "$CRED_BACKUP_DIR" -name '*.env' -print -quit)" ]; then
+              echo "  ✓ Credentials backed up to $CRED_BACKUP_DIR"
+            else
+              echo "  (no credential configs found to back up)"
+            fi
+            # Restore on ANY exit: success, error or signal
+            trap restore_configs EXIT
+
             # Check if .git exists; if not, clone the repo
             if [ ! -d ".git" ]; then
               echo "  ⚠️  Not a git repository. Cloning from origin..."
 
               # If directory is not empty, move existing files to a backup location
               if [ -n "$(ls -A .)" ]; then
-                BACKUP_DIR="/tmp/PondCDRSuite_backup_$(date +%s)"
-                echo "  ⚠️  Directory is not empty. Moving existing files to $BACKUP_DIR"
-                mkdir -p "$BACKUP_DIR"
-                mv * .[!.]* "$BACKUP_DIR"/ 2>/dev/null || true
+                OLD_FILES_DIR="/tmp/PondCDRSuite_old_files_$(date +%s)"
+                echo "  ⚠️  Directory is not empty. Moving existing files to $OLD_FILES_DIR"
+                mkdir -p "$OLD_FILES_DIR"
+                mv * .[!.]* "$OLD_FILES_DIR"/ 2>/dev/null || true
               fi
 
               # Clone the repository into the current directory
@@ -87,13 +122,9 @@ jobs:
               echo "  ✓ Repository cloned"
             else
               # Repository already exists — update it
-              echo "  → Stashing local changes..."
-              git stash push -u -m "Deploy stash $VERSION" \
-                -- '*.env' \
-                'cdr_sync/config/*' \
-                'cdr_sync/logs/*' \
-                2>&1 || echo "  (nothing to stash)"
-
+              # NOTE: no git stash here. Credential configs are protected by the
+              # backup/restore above; git reset --hard does not touch
+              # git-ignored files, so nothing else needs preserving.
               echo "  → Fetching origin..."
               git fetch origin 2>&1 || {
                 echo "ERROR: git fetch failed"
@@ -105,9 +136,6 @@ jobs:
                 echo "ERROR: git reset failed"
                 exit 1
               }
-
-              echo "  → Restoring stashed files..."
-              git stash pop 2>&1 || echo "  (no stash to restore)"
 
               echo "  ✓ Repository updated"
             fi

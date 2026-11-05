@@ -1,7 +1,6 @@
-# PondCDRSuite logrotate template
-# Placeholders are substituted during deployment:
-#   __LOG_DIR__      - project log directory (e.g. /PondCDRSuite/cdr_copy/logs)
-#   __DEPLOY_USER__  - deployment user owning the logs
+# PondCDRSuite logrotate configuration (generated from logrotate.template)
+# Rendered per project (cdr_copy, cdr_sync) during deployment: log directory
+# and owning user are substituted into the rules below.
 __LOG_DIR__/*.log {
     daily
     maxsize 1G

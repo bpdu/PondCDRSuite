@@ -44,6 +44,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   handled explicitly with a clear error message.
 - Deploy pipeline no longer aborts when `chmod +x` fails due to file
   ownership mismatch — a warning is logged instead.
+- Credential task configs (`cdr_copy/config/*.env`, `cdr_sync/config/*.env`)
+  are now backed up before any git operation and automatically restored on
+  both success and failure. The previous `git stash push/pop` approach
+  failed silently when no files matched its pathspecs and never covered
+  `cdr_copy/config`.
+- Fresh-clone path no longer moves credential configs away together with
+  the rest of the directory contents; configs are restored after cloning.
 
 ## [2026-10] — 2026-10-30
 
